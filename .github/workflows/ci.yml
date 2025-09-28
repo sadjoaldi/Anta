@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  web-build-and-lint:
+    name: Build and Lint Web
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: 'npm'
+
+      - name: Install web dependencies
+        run: npm install
+        working-directory: packages/frontend/web
+
+      - name: Lint (web)
+        run: npm run lint --if-present
+        working-directory: packages/frontend/web
+
+      - name: Build (web)
+        run: npm run build
+        working-directory: packages/frontend/web

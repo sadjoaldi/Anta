@@ -13,7 +13,7 @@ export default function Dashboard() {
         </div>
         <div className="bg-white p-4 rounded-lg shadow border">
           <div className="text-sm text-gray-500">Revenus</div>
-          <div className="text-3xl font-bold">€ 1,240</div>
+          <div className="text-3xl font-bold">FG 3500000</div>
         </div>
       </div>
     </div>
