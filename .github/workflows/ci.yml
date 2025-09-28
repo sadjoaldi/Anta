@@ -19,7 +19,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22.x
-          cache: 'npm'
+          # No cache at repo root (no lockfile there). Add below when committing lockfile:
+          # cache: 'npm'
+          # cache-dependency-path: packages/frontend/web/package-lock.json
 
       - name: Install web dependencies
         run: npm install
