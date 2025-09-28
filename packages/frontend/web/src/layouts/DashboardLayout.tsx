@@ -1,6 +1,6 @@
 import { Outlet } from "react-router-dom";
-import AppSidebar from "../components/AppSidebar";
 import Topbar from "../components/Topbar";
+import AppSidebar from "../components/AppSidebar";
 
 export default function DashboardLayout() {
   return (
@@ -8,7 +8,7 @@ export default function DashboardLayout() {
       <Topbar />
       <div className="grid grid-cols-[256px_1fr] h-full overflow-hidden">
         <AppSidebar />
-        <main className="h-full overflow-auto p-6 bg-gray-50">
+        <main className="h-full overflow-auto p-6 bg-gray-50 dark:bg-gray-950 dark:text-gray-100">
           <Outlet />
         </main>
       </div>

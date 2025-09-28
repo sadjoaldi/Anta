@@ -7,7 +7,7 @@ export function Sidebar({ className, ...props }: React.HTMLAttributes<HTMLDivEle
   return (
     <aside
       className={cn(
-        "h-full w-64 shrink-0 border-r border-gray-200 bg-white flex flex-col",
+        "h-full w-64 shrink-0 border-r border-gray-200 bg-white flex flex-col dark:bg-gray-950 dark:border-gray-800",
         className
       )}
       {...props}
@@ -16,7 +16,7 @@ export function Sidebar({ className, ...props }: React.HTMLAttributes<HTMLDivEle
 }
 
 export function SidebarHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("px-4 py-3 border-b border-gray-100", className)} {...props} />;
+  return <div className={cn("px-4 py-3 border-b border-gray-100 dark:border-gray-800", className)} {...props} />;
 }
 
 export function SidebarContent({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
@@ -24,7 +24,7 @@ export function SidebarContent({ className, ...props }: React.HTMLAttributes<HTM
 }
 
 export function SidebarFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("px-4 py-3 border-t border-gray-100 text-xs text-gray-500", className)} {...props} />;
+  return <div className={cn("px-4 py-3 border-t border-gray-100 text-xs text-gray-500 dark:border-gray-800 dark:text-gray-400", className)} {...props} />;
 }
 
 export function SidebarGroup({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
@@ -32,7 +32,7 @@ export function SidebarGroup({ className, ...props }: React.HTMLAttributes<HTMLD
 }
 
 export function SidebarGroupLabel({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("px-2 mb-2 text-xs uppercase tracking-wide text-gray-500", className)} {...props} />;
+  return <div className={cn("px-2 mb-2 text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400", className)} {...props} />;
 }
 
 export function SidebarGroupContent({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
@@ -57,7 +57,9 @@ export function SidebarMenuButton({ className, icon, ...props }: SidebarMenuButt
     <Link
       className={cn(
         "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-        active ? "bg-green-100 text-green-700" : "text-gray-700 hover:bg-gray-100",
+        active
+          ? "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-300"
+          : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800",
         className
       )}
       {...props}

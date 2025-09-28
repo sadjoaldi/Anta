@@ -4,16 +4,16 @@ import * as React from "react";
 import { cn } from "../../lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ring-offset-white dark:ring-offset-gray-900 disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
         default:
-          "bg-green-600 text-white hover:bg-green-700 focus-visible:ring-green-600",
-        secondary: "bg-gray-100 text-gray-900 hover:bg-gray-200",
-        outline: "border border-gray-300 text-gray-900 hover:bg-gray-50",
-        ghost: "hover:bg-gray-100 text-gray-700",
-        link: "text-green-700 underline-offset-4 hover:underline",
+          "bg-green-600 text-white hover:bg-green-700 focus-visible:ring-green-600 dark:bg-green-700 dark:hover:bg-green-600",
+        secondary: "bg-gray-100 text-gray-900 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700",
+        outline: "border border-gray-300 text-gray-900 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-100 dark:hover:bg-gray-800",
+        ghost: "hover:bg-gray-100 text-gray-700 dark:text-gray-300 dark:hover:bg-gray-800/60",
+        link: "text-green-700 underline-offset-4 hover:underline dark:text-green-400",
       },
       size: {
         default: "h-10 px-4 py-2",
