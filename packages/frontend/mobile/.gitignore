@@ -1,0 +1,11 @@
+.expo
+.env
+node_modules
+yarn-error.log
+package-lock.json
+yarn.lock
+build
+__tests__
+coverage
+yarnrc
+yarnrc.yarnrc

@@ -1,0 +1,46 @@
+# Root ignores
+node_modules/
+**/node_modules/
+.dist/
+dist/
+build/
+.tmp/
+.temp/
+.DS_Store
+Thumbs.db
+*.log
+logs/
+.coverage/
+coverage/
+
+# Envs
+.env
+**/.env
+.env.local
+**/.env.local
+
+# Expo/React Native
+.expo/
+**/.expo/
+.expo-shared/
+**/.expo-shared/
+
+# Next/Turbo (future-proof)
+.next/
+.turbo/
+
+# IDE/editor
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Generated lockfiles at root only (keep inside packages)
+package-lock.json
+
+# Web build artifacts
+packages/frontend/web/.vite/
+packages/frontend/web/.cache/
+
+# OS
+Icon?

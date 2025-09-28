@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "ANTA",
+    "slug": "anta",
+    "scheme": "anta",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "android": {
+      "package": "gn.anta.app"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "gn.anta.app"
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router"
+    ]
+  }
+}

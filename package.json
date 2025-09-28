@@ -1,0 +1,10 @@
+{
+  "name": "anta-monorepo",
+  "private": true,
+  "scripts": {
+    "install:all": "npm --prefix packages/backend/anta-server install && npm --prefix packages/frontend/mobile install && npm --prefix packages/frontend/web install",
+    "dev:backend": "npm --prefix packages/backend/anta-server run dev",
+    "dev:web": "npm --prefix packages/frontend/web run dev",
+    "dev:mobile": "npm --prefix packages/frontend/mobile run start"
+  }
+}
