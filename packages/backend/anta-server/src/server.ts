@@ -1,15 +1,14 @@
 import 'dotenv/config';
-import express, { Request, Response } from 'express';
+import express from 'express';
 import cors from 'cors';
 import http from 'http';
 import { WebSocketServer } from 'ws';
-import knex from './utils/knex';
-import errorHandler from './middleware/errorHandler';
-
-import authRoutes from './routes/auth';
-import driverRoutes from './routes/drivers';
-import rideRoutes from './routes/rides';
-import initSockets from './sockets';
+import knex from './utils/knex.js';
+import errorHandler from './middleware/errorHandler.js';
+import { securityHeaders, configureCors, sanitizeRequest, requestLogger } from './middleware/security.js';
+import { apiLimiter } from './middleware/rateLimiter.js';
+import initSockets from './sockets/index.js';
+import { registerRoutes } from './route.js';
 
 const app = express();
 const server = http.createServer(app);
@@ -19,33 +18,47 @@ const wss = new WebSocketServer({ server });
 (async () => {
   try {
     await knex.raw('select 1 as ok');
-    console.log('DB connected (Knex)');
+    console.log('✅ DB connected (Knex)');
   } catch (err: any) {
-    console.error('DB connection error:', err?.message);
+    console.error('❌ DB connection error:', err?.message);
   }
 })();
 
-// Middlewares
-app.use(cors({ origin: process.env.CORS_ORIGIN || '*' }));
-app.use(express.json());
+// Security middlewares (must be first)
+app.use(securityHeaders);
+app.use(sanitizeRequest);
 
-// Healthcheck
-app.get('/api/health', (_req: Request, res: Response) => {
-  res.json({ ok: true, service: 'anta-server', time: new Date().toISOString() });
-});
+// Request logging (development only)
+if (process.env.NODE_ENV !== 'production') {
+  app.use(requestLogger);
+}
+
+// CORS configuration
+const corsOrigins = process.env.CORS_ORIGIN 
+  ? process.env.CORS_ORIGIN.split(',').map(o => o.trim())
+  : '*';
+app.use(cors(configureCors(corsOrigins)));
+
+// Body parser
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Rate limiting (apply to all API routes)
+app.use('/api', apiLimiter);
 
 // Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/drivers', driverRoutes);
-app.use('/api/rides', rideRoutes);
+registerRoutes(app);
 
 // WebSocket
 initSockets(wss);
 
-// Error handler
+// Error handler (must be last)
 app.use(errorHandler);
 
 const PORT = Number(process.env.PORT || 4000);
 server.listen(PORT, () => {
-  console.log(`ANTA server listening on port ${PORT}`);
+  console.log(`🚀 ANTA server listening on port ${PORT}`);
+  console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🔒 Security headers enabled`);
+  console.log(`⏱️  Rate limiting enabled`);
 });

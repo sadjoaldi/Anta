@@ -1,0 +1,58 @@
+# Dependencies
+node_modules/
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Build
+dist/
+build/
+*.tsbuildinfo
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# .env
+.env.example
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Database
+*.sqlite
+*.db
+data/
+
+# Documentation détaillée (garder seulement README.md et .env.example)
+API_DOCUMENTATION.md
+AUTH_IMPLEMENTATION.md
+CURL_EXAMPLES.md
+INSTALL_DEPENDENCIES.md
+MODELS_SUMMARY.md
+PROJECT_STATUS.md
+ROUTES_CONTROLLERS_SUMMARY.md
+STEP3_COMPLETE.md
+TESTING_GUIDE.md
+TEST_FILES_README.md
+QUICK_START.md
+GIT_CLEANUP_GUIDE.md
+
+# Tests (optionnels - décommenter si vous ne voulez pas les envoyer)
+# tests.http
+# tests-auth.http
+# test-endpoints.js
+# postman_collection.json

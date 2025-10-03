@@ -1,0 +1,85 @@
+import { BaseModel } from './BaseModel.js';
+import { Driver, DriverInsert, DriverUpdate, DriverStatus } from './types.js';
+
+export class DriverModel extends BaseModel<Driver, DriverInsert, DriverUpdate> {
+  constructor() {
+    super('drivers');
+  }
+  /**
+   * Find driver by user_id
+   */
+  async findByUserId(userId: number): Promise<Driver | undefined> {
+    return this.findOne({ user_id: userId });
+  }
+
+  /**
+   * Get drivers by status
+   */
+  async getByStatus(status: DriverStatus, limit?: number, offset?: number): Promise<Driver[]> {
+    return this.findAll({ status }, limit, offset);
+  }
+
+  /**
+   * Get online drivers
+   */
+  async getOnlineDrivers(limit?: number, offset?: number): Promise<Driver[]> {
+    return this.getByStatus('online', limit, offset);
+  }
+
+  /**
+   * Get available drivers (online and not busy)
+   */
+  async getAvailableDrivers(limit?: number, offset?: number): Promise<Driver[]> {
+    return this.getByStatus('online', limit, offset);
+  }
+
+  /**
+   * Update driver status
+   */
+  async updateStatus(id: number, status: DriverStatus): Promise<number> {
+    return this.updateById(id, { status });
+  }
+
+  /**
+   * Update driver rating
+   */
+  async updateRating(id: number, newRating: number, totalTrips: number): Promise<number> {
+    return this.updateById(id, {
+      rating_avg: newRating,
+      total_trips: totalTrips
+    });
+  }
+
+  /**
+   * Increment total trips
+   */
+  async incrementTrips(id: number): Promise<void> {
+    await this.db.raw('UPDATE drivers SET total_trips = total_trips + 1 WHERE id = ?', [id]);
+  }
+
+  /**
+   * Get drivers with details (join with users and vehicles)
+   */
+  async getDriversWithDetails(limit?: number, offset?: number) {
+    let query = this.db('drivers')
+      .select(
+        'drivers.*',
+        'users.name as user_name',
+        'users.phone as user_phone',
+        'users.email as user_email',
+        'vehicles.type as vehicle_type',
+        'vehicles.model as vehicle_model',
+        'vehicles.color as vehicle_color'
+      )
+      .leftJoin('users', 'drivers.user_id', 'users.id')
+      .leftJoin('vehicles', 'drivers.vehicle_id', 'vehicles.id');
+
+    if (limit) query = query.limit(limit);
+    if (offset) query = query.offset(offset);
+
+    return query;
+  }
+}
+
+// Export singleton instance
+export default new DriverModel();

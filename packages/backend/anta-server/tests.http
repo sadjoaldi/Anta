@@ -1,0 +1,355 @@
+### ANTA API Test Endpoints
+### Use REST Client extension in VS Code to run these tests
+### Format: Click "Send Request" above each request
+
+@baseUrl = http://localhost:4000/api
+@contentType = application/json
+
+###############################################
+# HEALTH CHECK
+###############################################
+
+### Health Check
+GET {{baseUrl}}/health
+
+###############################################
+# USERS
+###############################################
+
+### Get all users (paginated)
+GET {{baseUrl}}/users?page=1&limit=10
+
+### Get user by ID
+GET {{baseUrl}}/users/1
+
+### Get user by phone
+GET {{baseUrl}}/users/phone/+1234567890
+
+### Get user by email
+GET {{baseUrl}}/users/email/updated@example.com
+
+### Get active users
+GET {{baseUrl}}/users/active?page=1&limit=10
+
+### Create new user
+POST {{baseUrl}}/users
+Content-Type: {{contentType}}
+
+{
+  "phone": "+1234567890",
+  "email": "newuser@example.com",
+  "name": "John Doe",
+  "password_hash": "hashed_password_here",
+  "default_payment_method_id": null
+}
+
+### Update user
+PUT {{baseUrl}}/users/1
+Content-Type: {{contentType}}
+
+{
+  "name": "John Doe Updated",
+  "email": "updated@example.com",
+  "is_active": true
+}
+
+### Delete user
+DELETE {{baseUrl}}/users/1
+
+###############################################
+# DRIVERS
+###############################################
+
+### Get all drivers (paginated)
+GET {{baseUrl}}/drivers?page=1&limit=10
+
+### Get driver by ID
+GET {{baseUrl}}/drivers/1
+
+### Get driver by user ID
+GET {{baseUrl}}/drivers/user/1 
+
+### Get drivers by status
+GET {{baseUrl}}/drivers/status/online
+
+### Get online drivers
+GET {{baseUrl}}/drivers/online?page=1&limit=10
+
+### Get available drivers
+GET {{baseUrl}}/drivers/available?page=1&limit=10
+
+### Get drivers with details
+GET {{baseUrl}}/drivers/details?page=1&limit=10
+
+### Create new driver
+POST {{baseUrl}}/drivers
+Content-Type: {{contentType}}
+
+{
+  "user_id": 2,
+  "vehicle_id": null,
+  "status": "offline",
+  "kyc_status": "pending"
+}
+
+### Update driver
+PUT {{baseUrl}}/drivers/1
+Content-Type: {{contentType}}
+
+{
+  "vehicle_id": 1,
+  "status": "online",
+  "kyc_status": "approved"
+}
+
+### Update driver status
+PATCH {{baseUrl}}/drivers/1/status
+Content-Type: {{contentType}}
+
+{
+  "status": "online"
+}
+
+### Update driver rating
+PATCH {{baseUrl}}/drivers/1/rating
+Content-Type: {{contentType}}
+
+{
+  "rating_avg": 4.8,
+  "total_trips": 150
+}
+
+### Increment driver trips
+POST {{baseUrl}}/drivers/1/increment-trips
+
+### Delete driver
+DELETE {{baseUrl}}/drivers/1
+
+###############################################
+# VEHICLES
+###############################################
+
+### Get all vehicles (paginated)
+GET {{baseUrl}}/vehicles?page=1&limit=10
+
+### Get vehicle by ID
+GET {{baseUrl}}/vehicles/1
+
+### Get vehicle by driver ID
+GET {{baseUrl}}/vehicles/driver/1
+
+### Get vehicles by type
+GET {{baseUrl}}/vehicles/type/sedan
+
+### Get active vehicles
+GET {{baseUrl}}/vehicles/active?page=1&limit=10
+
+### Create new vehicle
+POST {{baseUrl}}/vehicles
+Content-Type: {{contentType}}
+
+{
+  "driver_id": 1,
+  "type": "sedan",
+  "model": "Toyota Camry 2023",
+  "color": "Black",
+  "capacity": 4,
+  "status": "active"
+}
+
+### Update vehicle
+PUT {{baseUrl}}/vehicles/1
+Content-Type: {{contentType}}
+
+{
+  "type": "suv",
+  "model": "Toyota RAV4 2023",
+  "color": "White",
+  "capacity": 5,
+  "status": "active"
+}
+
+### Update vehicle status
+PATCH {{baseUrl}}/vehicles/1/status
+Content-Type: {{contentType}}
+
+{
+  "status": "maintenance"
+}
+
+### Delete vehicle
+DELETE {{baseUrl}}/vehicles/1
+
+###############################################
+# TRIPS
+###############################################
+
+### Get all trips (paginated)
+GET {{baseUrl}}/trips?page=1&limit=10
+
+### Get trip by ID
+GET {{baseUrl}}/trips/1
+
+### Get trip with details
+GET {{baseUrl}}/trips/1/details
+
+### Get trips by passenger
+GET {{baseUrl}}/trips/passenger/1?page=1&limit=10
+
+### Get trips by driver
+GET {{baseUrl}}/trips/driver/1?page=1&limit=10
+
+### Get trips by status
+GET {{baseUrl}}/trips/status/pending?page=1&limit=10
+
+### Get pending trips
+GET {{baseUrl}}/trips/pending?page=1&limit=10
+
+### Get active trips
+GET {{baseUrl}}/trips/active?page=1&limit=10
+
+### Get driver's active trip
+GET {{baseUrl}}/trips/driver/1/active
+
+### Get passenger's active trip
+GET {{baseUrl}}/trips/passenger/1/active
+
+### Get user trip history
+GET {{baseUrl}}/trips/user/1/history?limit=20&offset=0
+
+### Create new trip
+POST {{baseUrl}}/trips
+Content-Type: {{contentType}}
+
+{
+  "passenger_id": 1,
+  "origin_lat": 48.8566,
+  "origin_lng": 2.3522,
+  "origin_text": "Paris, France",
+  "dest_lat": 48.8738,
+  "dest_lng": 2.2950,
+  "dest_text": "La Défense, Paris",
+  "price_estimated": 1500,
+  "distance_m": 5000,
+  "duration_s": 900,
+  "payment_method": "card"
+}
+
+### Update trip
+PUT {{baseUrl}}/trips/1
+Content-Type: {{contentType}}
+
+{
+  "price_estimated": 1600,
+  "distance_m": 5200
+}
+
+### Update trip status
+PATCH {{baseUrl}}/trips/1/status
+Content-Type: {{contentType}}
+
+{
+  "status": "in_progress"
+}
+
+### Assign driver to trip
+POST {{baseUrl}}/trips/1/assign
+Content-Type: {{contentType}}
+
+{
+  "driver_id": 1,
+  "vehicle_id": 1
+}
+
+### Complete trip
+POST {{baseUrl}}/trips/1/complete
+Content-Type: {{contentType}}
+
+{
+  "price_final": 1650
+}
+
+### Cancel trip
+POST {{baseUrl}}/trips/1/cancel
+Content-Type: {{contentType}}
+
+{
+  "reason": "Passenger cancelled"
+}
+
+### Delete trip
+DELETE {{baseUrl}}/trips/1
+
+###############################################
+# PAYMENTS
+###############################################
+
+### Get all payments (paginated)
+GET {{baseUrl}}/payments?page=1&limit=10
+
+### Get payment by ID
+GET {{baseUrl}}/payments/1
+
+### Get payments by trip
+GET {{baseUrl}}/payments/trip/1
+
+### Get payments by status
+GET {{baseUrl}}/payments/status/paid?page=1&limit=10
+
+### Get total revenue
+GET {{baseUrl}}/payments/revenue/total
+
+### Get revenue by date range
+GET {{baseUrl}}/payments/revenue/range?startDate=2024-01-01&endDate=2024-12-31
+
+### Create new payment
+POST {{baseUrl}}/payments
+Content-Type: {{contentType}}
+
+{
+  "trip_id": 1,
+  "amount": 1650,
+  "currency": "EUR",
+  "method": "card",
+  "provider_ref": "stripe_ch_123456",
+  "status": "pending"
+}
+
+### Update payment
+PUT {{baseUrl}}/payments/1
+Content-Type: {{contentType}}
+
+{
+  "status": "paid",
+  "provider_ref": "stripe_ch_123456_confirmed"
+}
+
+### Update payment status
+PATCH {{baseUrl}}/payments/1/status
+Content-Type: {{contentType}}
+
+{
+  "status": "paid",
+  "provider_ref": "stripe_ch_123456_confirmed"
+}
+
+### Delete payment
+DELETE {{baseUrl}}/payments/1
+
+###############################################
+# ERROR SCENARIOS (for testing error handling)
+###############################################
+
+### Get non-existent user (404)
+GET {{baseUrl}}/users/99999
+
+### Create user with missing data (400)
+POST {{baseUrl}}/users
+Content-Type: {{contentType}}
+
+{
+  "name": "Incomplete User"
+}
+
+### Get with invalid ID format
+GET {{baseUrl}}/users/invalid-id

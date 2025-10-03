@@ -1,0 +1,294 @@
+### ANTA API - Authentication Tests
+### Use REST Client extension in VS Code to run these tests
+
+@baseUrl = http://localhost:4000/api
+@contentType = application/json
+
+# Variables (will be set after requests)
+@accessToken = 
+@refreshToken = 
+@userId = 
+
+###############################################
+# REGISTRATION
+###############################################
+
+### Register new user (passenger)
+POST {{baseUrl}}/auth/register
+Content-Type: {{contentType}}
+
+{
+  "phone": "+33612345678",
+  "email": "testuser@example.com",
+  "name": "Test User",
+  "password": "Password123!",
+  "role": "passenger"
+}
+
+### Register new driver
+POST {{baseUrl}}/auth/register
+Content-Type: {{contentType}}
+
+{
+  "phone": "+33687654321",
+  "email": "testdriver@example.com",
+  "name": "Test Driver",
+  "password": "Password123!",
+  "role": "driver"
+}
+
+### Register with weak password (should fail)
+POST {{baseUrl}}/auth/register
+Content-Type: {{contentType}}
+
+{
+  "phone": "+33600000000",
+  "email": "weak@example.com",
+  "name": "Weak Password User",
+  "password": "weak"
+}
+
+### Register with duplicate phone (should fail)
+POST {{baseUrl}}/auth/register
+Content-Type: {{contentType}}
+
+{
+  "phone": "+33612345678",
+  "email": "duplicate@example.com",
+  "name": "Duplicate User",
+  "password": "Password123!"
+}
+
+###############################################
+# LOGIN
+###############################################
+
+### Login with valid credentials
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "phone": "+33612345678",
+  "password": "Password123!"
+}
+
+### Extract tokens from login response
+@accessToken = {{login.response.body.data.tokens.accessToken}}
+@refreshToken = {{login.response.body.data.tokens.refreshToken}}
+@userId = {{login.response.body.data.user.id}}
+
+### Login with invalid phone
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "phone": "+33600000000",
+  "password": "Password123!"
+}
+
+### Login with invalid password
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "phone": "+33612345678",
+  "password": "WrongPassword123!"
+}
+
+###############################################
+# AUTHENTICATED REQUESTS
+###############################################
+
+### Get current user profile
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{accessToken}}
+
+### Get current user without token (should fail)
+GET {{baseUrl}}/auth/me
+
+###############################################
+# TOKEN REFRESH
+###############################################
+
+### Refresh access token
+# @name refresh
+POST {{baseUrl}}/auth/refresh
+Content-Type: {{contentType}}
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+### Update access token from refresh response
+@accessToken = {{refresh.response.body.data.accessToken}}
+
+### Refresh with invalid token (should fail)
+POST {{baseUrl}}/auth/refresh
+Content-Type: {{contentType}}
+
+{
+  "refreshToken": "invalid_refresh_token"
+}
+
+###############################################
+# PASSWORD CHANGE
+###############################################
+
+### Change password
+POST {{baseUrl}}/auth/change-password
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "currentPassword": "Password123!",
+  "newPassword": "NewPassword456!"
+}
+
+### Login with new password
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "phone": "+33612345678",
+  "password": "NewPassword456!"
+}
+
+### Change password with wrong current password (should fail)
+POST {{baseUrl}}/auth/change-password
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "currentPassword": "WrongPassword123!",
+  "newPassword": "AnotherPassword789!"
+}
+
+### Change password with weak new password (should fail)
+POST {{baseUrl}}/auth/change-password
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "currentPassword": "NewPassword456!",
+  "newPassword": "weak"
+}
+
+###############################################
+# LOGOUT
+###############################################
+
+### Logout (revoke refresh token)
+POST {{baseUrl}}/auth/logout
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+### Try to use revoked refresh token (should fail)
+POST {{baseUrl}}/auth/refresh
+Content-Type: {{contentType}}
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+### Logout from all devices
+POST {{baseUrl}}/auth/logout-all
+Authorization: Bearer {{accessToken}}
+
+###############################################
+# PROTECTED ROUTES EXAMPLES
+###############################################
+
+### Access protected user route with token
+GET {{baseUrl}}/users/{{userId}}
+Authorization: Bearer {{accessToken}}
+
+### Access protected user route without token (should fail)
+GET {{baseUrl}}/users/{{userId}}
+
+### Create trip with authentication
+POST {{baseUrl}}/trips
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "passenger_id": {{userId}},
+  "origin_lat": 48.8566,
+  "origin_lng": 2.3522,
+  "origin_text": "Paris",
+  "dest_lat": 48.8738,
+  "dest_lng": 2.2950,
+  "dest_text": "La Défense",
+  "price_estimated": 1500,
+  "distance_m": 5000,
+  "duration_s": 900,
+  "payment_method": "card"
+}
+
+###############################################
+# RATE LIMITING TESTS
+###############################################
+
+### Test rate limiting on login (try multiple times quickly)
+### Should get rate limited after 5 attempts in 15 minutes
+
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "phone": "+33600000000",
+  "password": "test"
+}
+
+###
+
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "phone": "+33600000001",
+  "password": "test"
+}
+
+###
+
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "phone": "+33600000002",
+  "password": "test"
+}
+
+###
+
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "phone": "+33600000003",
+  "password": "test"
+}
+
+###
+
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "phone": "+33600000004",
+  "password": "test"
+}
+
+### This one should be rate limited
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "phone": "+33600000005",
+  "password": "test"
+}
