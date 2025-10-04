@@ -10,18 +10,26 @@ import {
 } from '../controllers/authController.js';
 import { authenticate } from '../middleware/auth.js';
 import { authLimiter } from '../middleware/rateLimiter.js';
+import { validate } from '../middleware/validate.js';
+import {
+  registerSchema,
+  loginSchema,
+  refreshTokenSchema,
+  logoutSchema,
+  changePasswordSchema
+} from '../schemas/index.js';
 
 const router = Router();
 
-// Public routes (with rate limiting)
-router.post('/register', authLimiter, register);
-router.post('/login', authLimiter, login);
-router.post('/refresh', refresh);
+// Public routes with rate limiting + validation
+router.post('/register', authLimiter, validate(registerSchema), register);
+router.post('/login', authLimiter, validate(loginSchema), login);
+router.post('/refresh', validate(refreshTokenSchema), refresh);
 
-// Protected routes (require authentication)
-router.post('/logout', authenticate, logout);
+// Protected routes with validation
+router.post('/logout', authenticate, validate(logoutSchema), logout);
 router.post('/logout-all', authenticate, logoutAll);
 router.get('/me', authenticate, getMe);
-router.post('/change-password', authenticate, changePassword);
+router.post('/change-password', authenticate, validate(changePasswordSchema), changePassword);
 
 export default router;

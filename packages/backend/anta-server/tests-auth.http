@@ -7,42 +7,49 @@
 # Variables (will be set after requests)
 @accessToken = 
 @refreshToken = 
-@userId = 
 
 ###############################################
 # REGISTRATION
 ###############################################
 
-### Register new user (passenger)
+### Register new user (Guinea phone format)
+# @name registerUser
 POST {{baseUrl}}/auth/register
 Content-Type: {{contentType}}
 
 {
-  "phone": "+33612345678",
-  "email": "testuser@example.com",
+  "phone": "+224612345678",
+  "email": "test1user@example.com",
   "name": "Test User",
   "password": "Password123!",
   "role": "passenger"
 }
 
-### Register new driver
+### Register new driver (creates user AND driver profile automatically)
+# @name registerDriver
 POST {{baseUrl}}/auth/register
 Content-Type: {{contentType}}
 
 {
-  "phone": "+33687654321",
-  "email": "testdriver@example.com",
+  "phone": "+224623456789",
+  "email": "test1driver@example.com",
   "name": "Test Driver",
   "password": "Password123!",
   "role": "driver"
 }
+
+### Extract driver user ID
+@driverUserId = {{registerDriver.response.body.data.user.id}}
+
+### Verify driver profile was created
+GET {{baseUrl}}/drivers/user/{{driverUserId}}
 
 ### Register with weak password (should fail)
 POST {{baseUrl}}/auth/register
 Content-Type: {{contentType}}
 
 {
-  "phone": "+33600000000",
+  "phone": "+224600000000",
   "email": "weak@example.com",
   "name": "Weak Password User",
   "password": "weak"
@@ -53,7 +60,7 @@ POST {{baseUrl}}/auth/register
 Content-Type: {{contentType}}
 
 {
-  "phone": "+33612345678",
+  "phone": "+224612345678",
   "email": "duplicate@example.com",
   "name": "Duplicate User",
   "password": "Password123!"
@@ -69,7 +76,7 @@ POST {{baseUrl}}/auth/login
 Content-Type: {{contentType}}
 
 {
-  "phone": "+33612345678",
+  "phone": "+224612345678",
   "password": "Password123!"
 }
 
@@ -83,7 +90,7 @@ POST {{baseUrl}}/auth/login
 Content-Type: {{contentType}}
 
 {
-  "phone": "+33600000000",
+  "phone": "+224600000000",
   "password": "Password123!"
 }
 
@@ -92,7 +99,7 @@ POST {{baseUrl}}/auth/login
 Content-Type: {{contentType}}
 
 {
-  "phone": "+33612345678",
+  "phone": "+224612345678",
   "password": "WrongPassword123!"
 }
 
@@ -150,7 +157,7 @@ POST {{baseUrl}}/auth/login
 Content-Type: {{contentType}}
 
 {
-  "phone": "+33612345678",
+  "phone": "+224612345678",
   "password": "NewPassword456!"
 }
 
@@ -240,7 +247,7 @@ POST {{baseUrl}}/auth/login
 Content-Type: {{contentType}}
 
 {
-  "phone": "+33600000000",
+  "phone": "+224600000000",
   "password": "test"
 }
 
@@ -250,7 +257,7 @@ POST {{baseUrl}}/auth/login
 Content-Type: {{contentType}}
 
 {
-  "phone": "+33600000001",
+  "phone": "+224600000001",
   "password": "test"
 }
 
@@ -260,7 +267,7 @@ POST {{baseUrl}}/auth/login
 Content-Type: {{contentType}}
 
 {
-  "phone": "+33600000002",
+  "phone": "+224600000002",
   "password": "test"
 }
 
@@ -270,7 +277,7 @@ POST {{baseUrl}}/auth/login
 Content-Type: {{contentType}}
 
 {
-  "phone": "+33600000003",
+  "phone": "+224600000003",
   "password": "test"
 }
 
@@ -280,7 +287,7 @@ POST {{baseUrl}}/auth/login
 Content-Type: {{contentType}}
 
 {
-  "phone": "+33600000004",
+  "phone": "+224600000004",
   "password": "test"
 }
 
@@ -289,6 +296,6 @@ POST {{baseUrl}}/auth/login
 Content-Type: {{contentType}}
 
 {
-  "phone": "+33600000005",
+  "phone": "+224600000005",
   "password": "test"
 }

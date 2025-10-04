@@ -19,9 +19,6 @@ logs/
 *.log
 npm-debug.log*
 
-# .env
-.env.example
-
 # OS
 .DS_Store
 Thumbs.db
@@ -40,16 +37,25 @@ data/
 # Documentation détaillée (garder seulement README.md et .env.example)
 API_DOCUMENTATION.md
 AUTH_IMPLEMENTATION.md
+BACKEND_COMPLETE_SUMMARY.md
 CURL_EXAMPLES.md
+FRONTEND_INTEGRATION_GUIDE.md
+GUINEA_CONFIG.md
+GIT_CLEANUP_GUIDE.md
 INSTALL_DEPENDENCIES.md
+INSTALL_ZOD.md
 MODELS_SUMMARY.md
 PROJECT_STATUS.md
+QUICK_START.md
+REGIONAL_UPDATE_SUMMARY.md
 ROUTES_CONTROLLERS_SUMMARY.md
+START_HERE.md
 STEP3_COMPLETE.md
+STEP4_ROUTES_SECURITY.md
+STEP5_VALIDATION.md
 TESTING_GUIDE.md
 TEST_FILES_README.md
-QUICK_START.md
-GIT_CLEANUP_GUIDE.md
+UPDATE_GUINEE.txt
 
 # Tests (optionnels - décommenter si vous ne voulez pas les envoyer)
 # tests.http

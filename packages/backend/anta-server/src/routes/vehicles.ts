@@ -10,24 +10,25 @@ import {
   updateVehicleStatus,
   deleteVehicle
 } from '../controllers/vehicleController.js';
+import { authenticate, requireAdmin, requireRole } from '../middleware/auth.js';
 
 const router = Router();
 
 // Base routes
-router.get('/', getVehicles);
-router.post('/', createVehicle);
+router.get('/', authenticate, getVehicles); // Tous les utilisateurs authentifiés
+router.post('/', authenticate, requireRole('driver', 'admin'), createVehicle); // Driver + Admin
 
 // Query routes (must be before :id)
-router.get('/active', getActiveVehicles);
-router.get('/type/:type', getVehiclesByType);
-router.get('/driver/:driverId', getVehicleByDriverId);
+router.get('/active', authenticate, getActiveVehicles); // Tous les utilisateurs authentifiés
+router.get('/type/:type', authenticate, getVehiclesByType); // Tous les utilisateurs authentifiés
+router.get('/driver/:driverId', authenticate, getVehicleByDriverId); // Tous les utilisateurs authentifiés
 
 // Individual vehicle routes
-router.get('/:id', getVehicleById);
-router.put('/:id', updateVehicle);
-router.delete('/:id', deleteVehicle);
+router.get('/:id', authenticate, getVehicleById); // Tous les utilisateurs authentifiés
+router.put('/:id', authenticate, requireRole('driver', 'admin'), updateVehicle); // Driver (own) + Admin
+router.delete('/:id', authenticate, requireRole('driver', 'admin'), deleteVehicle); // Driver (own) + Admin
 
 // Action routes
-router.patch('/:id/status', updateVehicleStatus);
+router.patch('/:id/status', authenticate, requireRole('driver', 'admin'), updateVehicleStatus); // Driver (own) + Admin
 
 export default router;
