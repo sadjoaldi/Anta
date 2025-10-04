@@ -1,3 +1,3 @@
 import React from 'react';
-import MessagesScreen from '../../app/screens/MessagesScreen';
+import MessagesScreen from '../../src/screens/MessagesScreen';
 export default function Page() { return <MessagesScreen />; }

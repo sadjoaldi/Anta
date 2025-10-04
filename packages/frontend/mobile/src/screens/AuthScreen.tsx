@@ -1,7 +1,7 @@
 import { useRouter } from "expo-router";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import colors from "../../src/theme/colors";
+import colors from "../theme/colors";
 
 export default function AuthScreen() {
   const router = useRouter();

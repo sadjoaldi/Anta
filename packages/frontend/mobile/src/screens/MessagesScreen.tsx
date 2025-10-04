@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import colors from '../../src/theme/colors';
+import colors from '../theme/colors';
 
 const MessagesScreen: React.FC = () => {
   return (

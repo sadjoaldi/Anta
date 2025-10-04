@@ -9,3 +9,7 @@ __tests__
 coverage
 yarnrc
 yarnrc.yarnrc
+
+# Documentation détaillée (garder seulement README.md)
+API_INTEGRATION_GUIDE.md
+MOBILE_API_SETUP_COMPLETE.md

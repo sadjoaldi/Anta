@@ -1,12 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import colors from '../../src/theme/colors';
+import colors from '../theme/colors';
 
-const ProfileScreen: React.FC = () => {
+const TrajetScreen: React.FC = () => {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Profil</Text>
-      <Text style={styles.subtitle}>Gérez vos informations et paramètres</Text>
+      <Text style={styles.title}>Trajets</Text>
+      <Text style={styles.subtitle}>Vos trajets en cours et à venir</Text>
     </View>
   );
 };
@@ -17,4 +17,4 @@ const styles = StyleSheet.create({
   subtitle: { marginTop: 8, color: '#555' }
 });
 
-export default ProfileScreen;
+export default TrajetScreen;

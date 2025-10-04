@@ -1,3 +1,3 @@
 import React from 'react';
-import TrajetScreen from '../../app/screens/TrajetScreen';
+import TrajetScreen from '../../src/screens/TrajetScreen';
 export default function Page() { return <TrajetScreen />; }
