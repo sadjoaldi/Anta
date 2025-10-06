@@ -108,6 +108,19 @@ const ProfileScreen: React.FC = () => {
         </View>
       </View>
 
+      {/* Bouton "Devenir chauffeur" pour les passengers */}
+      {user.role === 'passenger' && (
+        <TouchableOpacity
+          style={styles.becomeDriverButton}
+          onPress={() => router.push('/driver/register')}
+        >
+          <Text style={styles.becomeDriverText}>🚗 Devenir chauffeur</Text>
+          <Text style={styles.becomeDriverSubtext}>
+            Gagnez de l'argent en conduisant
+          </Text>
+        </TouchableOpacity>
+      )}
+
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutButtonText}>Déconnexion</Text>
       </TouchableOpacity>
@@ -193,8 +206,33 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 16,
   },
+  becomeDriverButton: {
+    margin: 24,
+    marginBottom: 12,
+    backgroundColor: colors.primary,
+    padding: 20,
+    borderRadius: 12,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  becomeDriverText: {
+    color: '#fff',
+    fontWeight: '800',
+    fontSize: 18,
+    marginBottom: 4,
+  },
+  becomeDriverSubtext: {
+    color: '#fff',
+    opacity: 0.9,
+    fontSize: 14,
+  },
   logoutButton: {
     margin: 24,
+    marginTop: 0,
     backgroundColor: '#f44336',
     padding: 16,
     borderRadius: 12,

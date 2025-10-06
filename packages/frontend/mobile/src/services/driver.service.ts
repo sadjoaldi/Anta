@@ -15,6 +15,23 @@ export interface UpdateDriverRatingData {
   rating_avg: number;
 }
 
+export interface CreateDriverProfileData {
+  user_id: number;
+  // Vehicle info
+  vehicle_type: string;
+  vehicle_brand: string;
+  vehicle_model: string;
+  vehicle_color: string;
+  vehicle_plate: string;
+  vehicle_capacity?: number;
+  // Driver license
+  license_number: string;
+  // Banking info
+  bank_name?: string;
+  account_number?: string;
+  account_holder?: string;
+}
+
 class DriverService {
   /**
    * Get driver by ID
@@ -84,6 +101,32 @@ class DriverService {
    */
   async createDriver(data: Partial<Driver>): Promise<Driver> {
     return await apiClient.post<Driver>(API_ENDPOINTS.drivers.base, data);
+  }
+
+  /**
+   * Create complete driver profile (for passenger becoming driver)
+   */
+  async createDriverProfile(data: CreateDriverProfileData): Promise<Driver> {
+    return await apiClient.post<Driver>(API_ENDPOINTS.drivers.base, {
+      user_id: data.user_id,
+      status: 'offline',
+      kyc_status: 'pending',
+      rating_avg: 5.0,
+      total_trips: 0,
+      // Vehicle info
+      vehicle_type: data.vehicle_type,
+      vehicle_brand: data.vehicle_brand,
+      vehicle_model: data.vehicle_model,
+      vehicle_color: data.vehicle_color,
+      vehicle_plate: data.vehicle_plate,
+      vehicle_capacity: data.vehicle_capacity,
+      // License
+      license_number: data.license_number,
+      // Banking
+      bank_name: data.bank_name,
+      account_number: data.account_number,
+      account_holder: data.account_holder,
+    });
   }
 
   /**

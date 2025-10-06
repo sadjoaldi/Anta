@@ -22,7 +22,6 @@ export default function RegisterScreen() {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [role, setRole] = useState<"passenger" | "driver">("passenger");
 
   const handleRegister = async () => {
     // Validation
@@ -62,7 +61,7 @@ export default function RegisterScreen() {
         phone,
         password,
         email: email || undefined,
-        role: role, // Utilise le rôle sélectionné
+        role: "passenger", // Tous les nouveaux users sont passengers par défaut
       });
       // Navigation automatique si succès
       Alert.alert("Succès", "Compte créé avec succès !", [
@@ -79,45 +78,6 @@ export default function RegisterScreen() {
         <Text style={styles.title}>Créer un compte</Text>
 
         {error && <Text style={styles.error}>{error}</Text>}
-
-        {/* Sélecteur de rôle (temporaire pour tests) */}
-        <View style={styles.roleSelector}>
-          <TouchableOpacity
-            style={[
-              styles.roleButton,
-              role === "passenger" && styles.roleButtonActive,
-            ]}
-            onPress={() => setRole("passenger")}
-            disabled={loading}
-          >
-            <Text
-              style={[
-                styles.roleButtonText,
-                role === "passenger" && styles.roleButtonTextActive,
-              ]}
-            >
-              👤 Passager
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.roleButton,
-              role === "driver" && styles.roleButtonActive,
-            ]}
-            onPress={() => setRole("driver")}
-            disabled={loading}
-          >
-            <Text
-              style={[
-                styles.roleButtonText,
-                role === "driver" && styles.roleButtonTextActive,
-              ]}
-            >
-              🚗 Chauffeur
-            </Text>
-          </TouchableOpacity>
-        </View>
 
         <TextInput
           style={styles.input}
@@ -231,32 +191,4 @@ const styles = StyleSheet.create({
   primaryText: { color: "#fff", fontWeight: "700", fontSize: 16 },
   link: { marginTop: 16, alignItems: "center" },
   linkText: { color: "#666", textDecorationLine: "underline" },
-  roleSelector: {
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 16,
-  },
-  roleButton: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: "#ddd",
-    backgroundColor: "#fff",
-    alignItems: "center",
-  },
-  roleButtonActive: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primary + "10",
-  },
-  roleButtonText: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#666",
-  },
-  roleButtonTextActive: {
-    color: colors.primary,
-    fontWeight: "700",
-  },
 });
