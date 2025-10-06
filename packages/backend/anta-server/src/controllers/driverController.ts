@@ -251,3 +251,93 @@ export const deleteDriver = asyncHandler(async (req: Request, res: Response) => 
   await Driver.deleteById(driverId);
   res.json(ApiResponse.success({ message: 'Driver deleted successfully' }));
 });
+
+/**
+ * @desc    Get pending KYC drivers
+ * @route   GET /api/drivers/kyc/pending
+ * @access  Private/Admin
+ */
+export const getPendingKycDrivers = asyncHandler(async (req: Request, res: Response) => {
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 20;
+  const offset = (page - 1) * limit;
+
+  const drivers = await Driver.getPendingKycDrivers(limit, offset);
+  const total = await Driver.count({ kyc_status: 'pending' });
+
+  res.json(ApiResponse.paginated(drivers, page, limit, total));
+});
+
+/**
+ * @desc    Get drivers by KYC status
+ * @route   GET /api/drivers/kyc/:status
+ * @access  Private/Admin
+ */
+export const getDriversByKycStatus = asyncHandler(async (req: Request, res: Response) => {
+  const status = req.params.status as 'pending' | 'approved' | 'rejected';
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 20;
+  const offset = (page - 1) * limit;
+
+  if (!['pending', 'approved', 'rejected'].includes(status)) {
+    throw ApiError.badRequest('Invalid KYC status. Must be: pending, approved, or rejected');
+  }
+
+  const drivers = await Driver.getByKycStatus(status, limit, offset);
+  const total = await Driver.count({ kyc_status: status });
+
+  res.json(ApiResponse.paginated(drivers, page, limit, total));
+});
+
+/**
+ * @desc    Approve driver KYC
+ * @route   PATCH /api/drivers/:id/kyc/approve
+ * @access  Private/Admin
+ */
+export const approveDriverKyc = asyncHandler(async (req: Request, res: Response) => {
+  const driverId = parseInt(req.params.id);
+
+  const driver = await Driver.findById(driverId);
+  if (!driver) {
+    throw ApiError.notFound('Driver');
+  }
+
+  if (driver.kyc_status === 'approved') {
+    throw ApiError.badRequest('Driver KYC is already approved');
+  }
+
+  await Driver.approveKyc(driverId);
+  const updatedDriver = await Driver.findById(driverId);
+
+  res.json(ApiResponse.success(updatedDriver, 'Driver KYC approved successfully'));
+});
+
+/**
+ * @desc    Reject driver KYC
+ * @route   PATCH /api/drivers/:id/kyc/reject
+ * @access  Private/Admin
+ */
+export const rejectDriverKyc = asyncHandler(async (req: Request, res: Response) => {
+  const driverId = parseInt(req.params.id);
+  const { reason } = req.body;
+
+  const driver = await Driver.findById(driverId);
+  if (!driver) {
+    throw ApiError.notFound('Driver');
+  }
+
+  if (driver.kyc_status === 'rejected') {
+    throw ApiError.badRequest('Driver KYC is already rejected');
+  }
+
+  await Driver.rejectKyc(driverId);
+  const updatedDriver = await Driver.findById(driverId);
+
+  // TODO: Send notification to driver with rejection reason
+  // await notificationService.sendKycRejection(driver.user_id, reason);
+
+  res.json(ApiResponse.success(
+    { ...updatedDriver, rejection_reason: reason },
+    'Driver KYC rejected'
+  ));
+});

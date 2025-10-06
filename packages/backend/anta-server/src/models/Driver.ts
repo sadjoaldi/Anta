@@ -79,6 +79,56 @@ export class DriverModel extends BaseModel<Driver, DriverInsert, DriverUpdate> {
 
     return query;
   }
+
+  /**
+   * Get drivers by KYC status
+   */
+  async getByKycStatus(kycStatus: 'pending' | 'approved' | 'rejected', limit?: number, offset?: number): Promise<Driver[]> {
+    return this.findAll({ kyc_status: kycStatus }, limit, offset);
+  }
+
+  /**
+   * Get pending KYC drivers (with user details)
+   */
+  async getPendingKycDrivers(limit?: number, offset?: number) {
+    let query = this.db('drivers')
+      .select(
+        'drivers.*',
+        'users.name as user_name',
+        'users.phone as user_phone',
+        'users.email as user_email',
+        'users.created_at as user_created_at'
+      )
+      .leftJoin('users', 'drivers.user_id', 'users.id')
+      .where('drivers.kyc_status', 'pending')
+      .orderBy('drivers.created_at', 'desc');
+
+    if (limit) query = query.limit(limit);
+    if (offset) query = query.offset(offset);
+
+    return query;
+  }
+
+  /**
+   * Approve driver KYC
+   */
+  async approveKyc(id: number): Promise<number> {
+    return this.updateById(id, { kyc_status: 'approved' });
+  }
+
+  /**
+   * Reject driver KYC
+   */
+  async rejectKyc(id: number): Promise<number> {
+    return this.updateById(id, { kyc_status: 'rejected' });
+  }
+
+  /**
+   * Update KYC status
+   */
+  async updateKycStatus(id: number, kycStatus: 'pending' | 'approved' | 'rejected'): Promise<number> {
+    return this.updateById(id, { kyc_status: kycStatus });
+  }
 }
 
 // Export singleton instance

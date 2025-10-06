@@ -12,7 +12,11 @@ import {
   updateDriverStatus,
   updateDriverRating,
   incrementDriverTrips,
-  deleteDriver
+  deleteDriver,
+  getPendingKycDrivers,
+  getDriversByKycStatus,
+  approveDriverKyc,
+  rejectDriverKyc
 } from '../controllers/driverController.js';
 import { authenticate, requireAdmin, requireRole } from '../middleware/auth.js';
 
@@ -29,6 +33,10 @@ router.get('/details', authenticate, requireAdmin, getDriversWithDetails); // Ad
 router.get('/status/:status', authenticate, requireAdmin, getDriversByStatus); // Admin only
 router.get('/user/:userId', authenticate, getDriverByUserId); // Authenticated users
 
+// KYC routes (Admin only)
+router.get('/kyc/pending', authenticate, requireAdmin, getPendingKycDrivers); // Get pending KYC requests
+router.get('/kyc/:status', authenticate, requireAdmin, getDriversByKycStatus); // Get drivers by KYC status
+
 // Individual driver routes
 router.get('/:id', authenticate, getDriverById); // Tous les utilisateurs authentifiés
 router.put('/:id', authenticate, requireRole('driver', 'admin'), updateDriver); // Driver (own) or Admin
@@ -38,5 +46,9 @@ router.delete('/:id', authenticate, requireAdmin, deleteDriver); // Admin only
 router.patch('/:id/status', authenticate, requireRole('driver', 'admin'), updateDriverStatus); // Driver (own) or Admin
 router.patch('/:id/rating', authenticate, updateDriverRating); // System or Admin (après une course)
 router.post('/:id/increment-trips', authenticate, incrementDriverTrips); // System (après une course)
+
+// KYC action routes (Admin only)
+router.patch('/:id/kyc/approve', authenticate, requireAdmin, approveDriverKyc); // Approve driver KYC
+router.patch('/:id/kyc/reject', authenticate, requireAdmin, rejectDriverKyc); // Reject driver KYC
 
 export default router;
