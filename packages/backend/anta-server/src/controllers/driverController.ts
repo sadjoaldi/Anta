@@ -3,6 +3,7 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { ApiError } from '../utils/ApiError.js';
 import Driver from '../models/Driver.js';
+import User from '../models/User.js';
 import { DriverStatus } from '../models/types.js';
 
 /**
@@ -113,19 +114,38 @@ export const getDriversWithDetails = asyncHandler(async (req: Request, res: Resp
   const offset = (page - 1) * limit;
 
   const drivers = await Driver.getDriversWithDetails(limit, offset);
-  // Note: getDriversWithDetails returns a complex join, count might need adjustment
   const total = await Driver.count();
-
+  
   res.json(ApiResponse.paginated(drivers, page, limit, total));
 });
 
 /**
- * @desc    Create new driver
+ * @desc    Create driver profile
  * @route   POST /api/drivers
- * @access  Private/Admin
+ * @access  Private (can create own profile) / Admin (can create for any user)
  */
 export const createDriver = asyncHandler(async (req: Request, res: Response) => {
-  const { user_id, vehicle_id, status, kyc_status } = req.body;
+  const {
+    user_id,
+    vehicle_id,
+    status,
+    kyc_status,
+    vehicle_type,
+    vehicle_brand,
+    vehicle_model,
+    vehicle_color,
+    vehicle_plate,
+    vehicle_capacity,
+    license_number,
+    bank_name,
+    account_number,
+    account_holder,
+  } = req.body;
+
+  // Security check: Non-admin users can only create their own driver profile
+  if (req.user?.role !== 'admin' && req.user?.userId !== user_id) {
+    throw ApiError.forbidden('You can only create your own driver profile');
+  }
 
   // Check if user is already a driver
   const existingDriver = await Driver.findByUserId(user_id);
@@ -139,8 +159,24 @@ export const createDriver = asyncHandler(async (req: Request, res: Response) => 
     status: status || 'offline',
     kyc_status: kyc_status || 'pending',
     rating_avg: 5.0,
-    total_trips: 0
+    total_trips: 0,
+    // Vehicle info
+    vehicle_type,
+    vehicle_brand,
+    vehicle_model,
+    vehicle_color,
+    vehicle_plate,
+    vehicle_capacity,
+    // License
+    license_number,
+    // Banking
+    bank_name,
+    account_number,
+    account_holder,
   });
+
+  // Note: User role will be updated to 'driver' only when admin approves (kyc_status = 'approved')
+  // This keeps the user as 'passenger' during the verification process
 
   const driver = await Driver.findById(driverId);
   res.status(201).json(ApiResponse.success(driver));
@@ -306,7 +342,12 @@ export const approveDriverKyc = asyncHandler(async (req: Request, res: Response)
     throw ApiError.badRequest('Driver KYC is already approved');
   }
 
+  // Approve the driver KYC
   await Driver.approveKyc(driverId);
+  
+  // Update user role to 'driver' now that they're approved
+  await User.updateById(driver.user_id, { role: 'driver' });
+  
   const updatedDriver = await Driver.findById(driverId);
 
   res.json(ApiResponse.success(updatedDriver, 'Driver KYC approved successfully'));
@@ -330,7 +371,13 @@ export const rejectDriverKyc = asyncHandler(async (req: Request, res: Response) 
     throw ApiError.badRequest('Driver KYC is already rejected');
   }
 
+  // Reject the driver KYC
   await Driver.rejectKyc(driverId);
+  
+  // Keep user role as 'passenger' since they're rejected
+  // (In case they were approved before and are being rejected again)
+  await User.updateById(driver.user_id, { role: 'passenger' });
+  
   const updatedDriver = await Driver.findById(driverId);
 
   // TODO: Send notification to driver with rejection reason

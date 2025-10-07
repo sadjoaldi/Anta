@@ -12,12 +12,15 @@ export type TicketStatus = 'open' | 'in_progress' | 'resolved' | 'closed';
 export type DiscountType = 'percent' | 'flat';
 
 // Table interfaces
+export type UserRole = 'passenger' | 'driver' | 'admin';
+
 export interface User {
   id: number;
   phone: string;
   email?: string | null;
   name?: string | null;
   password_hash: string;
+  role: UserRole;
   default_payment_method_id?: number | null;
   is_active: boolean;
   created_at: Date;
@@ -32,6 +35,19 @@ export interface Driver {
   kyc_status: KycStatus;
   rating_avg: number;
   total_trips: number;
+  // Vehicle information
+  vehicle_type?: string | null;
+  vehicle_brand?: string | null;
+  vehicle_model?: string | null;
+  vehicle_color?: string | null;
+  vehicle_plate?: string | null;
+  vehicle_capacity?: number | null;
+  // License information
+  license_number?: string | null;
+  // Banking information
+  bank_name?: string | null;
+  account_number?: string | null;
+  account_holder?: string | null;
 }
 
 export interface Vehicle {

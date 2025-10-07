@@ -14,6 +14,9 @@ import colors from '../theme/colors';
 const ProfileScreen: React.FC = () => {
   const router = useRouter();
   const { user, logout, loading, isAuthenticated } = useAuth();
+  
+  // Get driver profile if exists (from user.driver populated by /auth/me)
+  const driverProfile = (user as any)?.driver || null;
 
   const handleLogout = async () => {
     Alert.alert(
@@ -108,8 +111,29 @@ const ProfileScreen: React.FC = () => {
         </View>
       </View>
 
-      {/* Bouton "Devenir chauffeur" pour les passengers */}
-      {user.role === 'passenger' && (
+      {/* Status de la demande chauffeur */}
+      {driverProfile && driverProfile.kyc_status === 'pending' && (
+        <View style={styles.kycPendingCard}>
+          <Text style={styles.kycPendingTitle}>⏳ Demande en cours</Text>
+          <Text style={styles.kycPendingText}>
+            Votre demande pour devenir chauffeur est en cours de vérification.
+            Nous vous contacterons sous 24-48h.
+          </Text>
+        </View>
+      )}
+
+      {/* Status rejeté */}
+      {driverProfile && driverProfile.kyc_status === 'rejected' && (
+        <View style={styles.kycRejectedCard}>
+          <Text style={styles.kycRejectedTitle}>❌ Demande refusée</Text>
+          <Text style={styles.kycRejectedText}>
+            Votre demande a été refusée. Veuillez nous contacter pour plus d'informations.
+          </Text>
+        </View>
+      )}
+
+      {/* Bouton "Devenir chauffeur" uniquement si pas de profil driver */}
+      {user.role === 'passenger' && !driverProfile && (
         <TouchableOpacity
           style={styles.becomeDriverButton}
           onPress={() => router.push('/driver/register')}
@@ -205,6 +229,46 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '700',
     fontSize: 16,
+  },
+  kycPendingCard: {
+    margin: 24,
+    marginBottom: 12,
+    backgroundColor: '#fff3cd',
+    padding: 20,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#ffc107',
+  },
+  kycPendingTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#856404',
+    marginBottom: 8,
+  },
+  kycPendingText: {
+    fontSize: 14,
+    color: '#856404',
+    lineHeight: 20,
+  },
+  kycRejectedCard: {
+    margin: 24,
+    marginBottom: 12,
+    backgroundColor: '#f8d7da',
+    padding: 20,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#f44336',
+  },
+  kycRejectedTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#721c24',
+    marginBottom: 8,
+  },
+  kycRejectedText: {
+    fontSize: 14,
+    color: '#721c24',
+    lineHeight: 20,
   },
   becomeDriverButton: {
     margin: 24,

@@ -50,12 +50,16 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
   // Hash password
   const password_hash = await hashPassword(password);
 
+  // Determine user role (passenger by default, admin/driver if specified)
+  const userRole = role === "admin" ? "admin" : role === "driver" ? "driver" : "passenger";
+
   // Create user
   const userId = await User.create({
     phone,
     email,
     name,
     password_hash,
+    role: userRole,
     is_active: true,
   });
 
@@ -64,11 +68,8 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     throw ApiError.internal("Failed to create user");
   }
 
-  // Determine user role (passenger by default, driver if specified)
-  const userRole = role === "driver" ? "driver" : "passenger";
-
   // If registering as driver, create driver profile automatically
-  if (role === "driver") {
+  if (userRole === "driver") {
     await Driver.create({
       user_id: user.id,
       status: "offline",
@@ -107,9 +108,15 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
   // Remove password from response
   const { password_hash: _, ...userWithoutPassword } = user;
 
+  // Check if user is also a driver (in case registered as driver)
+  const driver = await Driver.findByUserId(user.id).catch(() => null);
+
   res.status(201).json(
     ApiResponse.success({
-      user: userWithoutPassword,
+      user: {
+        ...userWithoutPassword,
+        driver: driver || null,  // Include driver profile if exists
+      },
       tokens: {
         accessToken,
         refreshToken,
@@ -149,12 +156,8 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
     throw ApiError.forbidden("Account is deactivated");
   }
 
-  // Determine role (check if user is also a driver)
-  let userRole: "passenger" | "driver" | "admin" = "passenger";
-  const driver = await Driver.findByUserId(user.id).catch(() => null);
-  if (driver) {
-    userRole = "driver";
-  }
+  // Use role from database
+  const userRole = user.role;
 
   // Generate tokens
   const accessToken = generateAccessToken({
@@ -188,9 +191,16 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
   // Remove password from response
   const { password_hash: _, ...userWithoutPassword } = user;
 
+  // Check if user is also a driver
+  const driver = await Driver.findByUserId(user.id).catch(() => null);
+
   res.json(
     ApiResponse.success({
-      user: { ...userWithoutPassword, role: userRole },
+      user: { 
+        ...userWithoutPassword, 
+        role: userRole,
+        driver: driver || null,  // Include driver profile if exists
+      },
       tokens: {
         accessToken,
         refreshToken,
@@ -306,7 +316,7 @@ export const getMe = asyncHandler(async (req: Request, res: Response) => {
   res.json(
     ApiResponse.success({
       ...userWithoutPassword,
-      role: req.user.role,
+      // Use role from database (most up-to-date), not from JWT token
       driver: driver || null,
     })
   );

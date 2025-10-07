@@ -24,7 +24,7 @@ const router = Router();
 
 // Base routes
 router.get('/', authenticate, getDrivers); // Tous les utilisateurs authentifiés
-router.post('/', authenticate, requireAdmin, createDriver); // Admin only (ou via register)
+router.post('/', authenticate, createDriver); // Authenticated users (can create own profile) / Admin (can create for any user)
 
 // Query routes (must be before :id)
 router.get('/online', authenticate, getOnlineDrivers); // Public pour voir les drivers disponibles

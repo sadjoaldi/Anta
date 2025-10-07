@@ -16,7 +16,7 @@ import colors from '../theme/colors';
 
 export default function BecomeDriverScreen() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [loading, setLoading] = useState(false);
 
   // Vehicle info
@@ -82,6 +82,9 @@ export default function BecomeDriverScreen() {
         account_number: accountNumber || undefined,
         account_holder: accountHolder || undefined,
       });
+
+      // Rafraîchir le profil utilisateur pour mettre à jour le rôle
+      await refreshUser();
 
       Alert.alert(
         'Demande envoyée ! 🎉',
