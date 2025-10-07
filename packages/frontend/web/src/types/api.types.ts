@@ -8,6 +8,7 @@ export type KycStatus = 'pending' | 'approved' | 'rejected';
 export type TripStatus = 'pending' | 'accepted' | 'in_progress' | 'completed' | 'cancelled';
 export type PaymentMethod = 'cash' | 'mobile_money' | 'card';
 export type PaymentStatus = 'pending' | 'completed' | 'failed' | 'refunded';
+export type PromotionType = 'percentage' | 'fixed_amount';
 
 export interface User {
   id: number;
@@ -96,6 +97,24 @@ export interface Payment {
 
 export interface PaymentWithTrip extends Payment {
   trip: Trip;
+}
+
+export interface Promotion {
+  id: number;
+  code: string;
+  description?: string | null;
+  type: PromotionType;
+  value: number;
+  min_trip_amount?: number | null;
+  max_discount?: number | null;
+  usage_limit?: number | null;
+  usage_count: number;
+  usage_per_user?: number | null;
+  is_active: boolean;
+  valid_from?: string | null;
+  valid_until?: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface LoginResponse {

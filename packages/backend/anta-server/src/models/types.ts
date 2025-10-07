@@ -10,6 +10,7 @@ export type OwnerType = 'user' | 'driver' | 'platform';
 export type PayoutStatus = 'pending' | 'processing' | 'paid' | 'failed';
 export type TicketStatus = 'open' | 'in_progress' | 'resolved' | 'closed';
 export type DiscountType = 'percent' | 'flat';
+export type PromotionType = 'percentage' | 'fixed_amount';
 
 // Table interfaces
 export type UserRole = 'passenger' | 'driver' | 'admin';
@@ -261,8 +262,36 @@ export type SessionInsert = Omit<Session, 'id' | 'created_at'> & {
   created_at?: Date;
 };
 
+export interface Promotion {
+  id: number;
+  code: string;
+  description?: string | null;
+  type: PromotionType;
+  value: number;
+  min_trip_amount?: number | null;
+  max_discount?: number | null;
+  usage_limit?: number | null;
+  usage_count: number;
+  usage_per_user?: number | null;
+  is_active: boolean;
+  valid_from?: Date | null;
+  valid_until?: Date | null;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface PromotionUsage {
+  id: number;
+  promotion_id: number;
+  user_id: number;
+  trip_id?: number | null;
+  discount_amount: number;
+  used_at: Date;
+}
+
 // Update types (all fields optional except id)
 export type UserUpdate = Partial<Omit<User, 'id' | 'created_at'>>;
 export type DriverUpdate = Partial<Omit<Driver, 'id'>>;
 export type TripUpdate = Partial<Omit<Trip, 'id' | 'created_at'>>;
 export type VehicleUpdate = Partial<Omit<Vehicle, 'id' | 'created_at'>>;
+export type PromotionUpdate = Partial<Omit<Promotion, 'id' | 'created_at' | 'usage_count'>>;
