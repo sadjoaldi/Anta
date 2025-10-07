@@ -64,20 +64,27 @@ export class DriverModel extends BaseModel<Driver, DriverInsert, DriverUpdate> {
     let query = this.db('drivers')
       .select(
         'drivers.*',
-        'users.name as user_name',
-        'users.phone as user_phone',
-        'users.email as user_email',
-        'vehicles.type as vehicle_type',
-        'vehicles.model as vehicle_model',
-        'vehicles.color as vehicle_color'
+        this.db.raw(`JSON_OBJECT(
+          'id', users.id,
+          'name', users.name,
+          'phone', users.phone,
+          'email', users.email,
+          'role', users.role,
+          'is_active', users.is_active
+        ) as user`)
       )
-      .leftJoin('users', 'drivers.user_id', 'users.id')
-      .leftJoin('vehicles', 'drivers.vehicle_id', 'vehicles.id');
+      .leftJoin('users', 'drivers.user_id', 'users.id');
 
     if (limit) query = query.limit(limit);
     if (offset) query = query.offset(offset);
 
-    return query;
+    const results = await query;
+    
+    // Parse JSON_OBJECT result
+    return results.map((row: any) => ({
+      ...row,
+      user: typeof row.user === 'string' ? JSON.parse(row.user) : row.user
+    }));
   }
 
   /**
