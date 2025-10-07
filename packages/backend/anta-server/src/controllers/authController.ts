@@ -187,6 +187,9 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
 
   // Update last login
   await User.touch(user.id);
+  
+  // Update last_login_at
+  await User.updateById(user.id, { last_login_at: new Date() });
 
   // Remove password from response
   const { password_hash: _, ...userWithoutPassword } = user;

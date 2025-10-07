@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
 import { Input } from "../components/ui/input";
@@ -9,12 +10,13 @@ import driverService from "../services/driver.service";
 import type { DriverWithUser } from "../types/api.types";
 
 export default function Drivers() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [page, setPage] = useState(1);
   const [drivers, setDrivers] = useState<DriverWithUser[]>([]);
   const [stats, setStats] = useState({ total: 0, active: 0, pending: 0, averageRating: 0 });
   const [loading, setLoading] = useState(true);
   const [totalPages, setTotalPages] = useState(1);
-  const [kycFilter, setKycFilter] = useState<string>("");
+  const [kycFilter, setKycFilter] = useState<string>(searchParams.get('kyc') || "");
 
   const fetchDrivers = useCallback(async () => {
     try {
