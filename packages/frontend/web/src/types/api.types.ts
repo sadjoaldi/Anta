@@ -83,6 +83,21 @@ export interface TripWithDetails extends Trip {
   driver?: User | null;
 }
 
+export interface Payment {
+  id: number;
+  trip_id: number;
+  amount: number;
+  currency: string;
+  method: PaymentMethod;
+  provider_ref?: string | null;
+  status: PaymentStatus;
+  created_at: string;
+}
+
+export interface PaymentWithTrip extends Payment {
+  trip: Trip;
+}
+
 export interface LoginResponse {
   user: User;
   tokens: {
