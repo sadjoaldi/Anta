@@ -7,7 +7,9 @@ import {
   createUser,
   updateUser,
   deleteUser,
-  getActiveUsers
+  getActiveUsers,
+  suspendUser,
+  activateUser
 } from '../controllers/userController.js';
 import { authenticate, requireAdmin, requireOwnership } from '../middleware/auth.js';
 import { createLimiter } from '../middleware/rateLimiter.js';
@@ -31,5 +33,9 @@ router.get('/email/:email', authenticate, requireAdmin, getUserByEmail);
 router.get('/:id', authenticate, getUserById); // Can view own profile or admin can view all
 router.put('/:id', authenticate, requireOwnership(), updateUser); // Can only update own profile (or admin)
 router.delete('/:id', authenticate, requireAdmin, deleteUser); // Admin only
+
+// User moderation (admin only)
+router.patch('/:id/suspend', authenticate, requireAdmin, suspendUser);
+router.patch('/:id/activate', authenticate, requireAdmin, activateUser);
 
 export default router;
