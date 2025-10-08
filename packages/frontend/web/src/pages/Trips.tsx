@@ -6,6 +6,7 @@ import { Input } from "../components/ui/input";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Pagination } from "../components/ui/pagination";
+import { ExportButton } from "../components/ExportButton";
 import tripService from "../services/trip.service";
 import type { TripWithDetails } from "../types/api.types";
 
@@ -86,7 +87,18 @@ export default function Trips() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Gestion trajets</h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Gestion trajets</h1>
+        <ExportButton 
+          endpoint="/export/trips"
+          filename={`trips_${new Date().toISOString().split('T')[0]}.csv`}
+          filters={{
+            status: statusFilter,
+            date_from: dateFrom,
+            date_to: dateTo,
+          }}
+        />
+      </div>
 
       <Card>
         <CardContent className="p-4">

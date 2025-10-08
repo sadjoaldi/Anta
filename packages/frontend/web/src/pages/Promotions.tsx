@@ -5,6 +5,7 @@ import { Input } from "../components/ui/input";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Pagination } from "../components/ui/pagination";
+import { ExportButton } from "../components/ExportButton";
 import promotionService from "../services/promotion.service";
 import type { Promotion } from "../types/api.types";
 
@@ -140,7 +141,13 @@ export default function Promotions() {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Gestion promotions</h1>
-        <Button onClick={() => setShowForm(true)}>+ Créer une promotion</Button>
+        <div className="flex gap-2">
+          <ExportButton 
+            endpoint="/export/promotions"
+            filename={`promotions_${new Date().toISOString().split('T')[0]}.csv`}
+          />
+          <Button onClick={() => setShowForm(true)}>+ Créer une promotion</Button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -195,7 +202,7 @@ export default function Promotions() {
                   <select
                     className="w-full border rounded-md h-10 px-3 text-sm"
                     value={formData.type}
-                    onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value as 'percentage' | 'fixed_amount' })}
                   >
                     <option value="percentage">Pourcentage (%)</option>
                     <option value="fixed_amount">Montant fixe (FG)</option>

@@ -6,6 +6,7 @@ import { Input } from "../components/ui/input";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Pagination } from "../components/ui/pagination";
+import { ExportButton } from "../components/ExportButton";
 import userService from "../services/user.service";
 import type { User } from "../types/api.types";
 
@@ -95,7 +96,18 @@ export default function Users() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Utilisateurs</h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Utilisateurs</h1>
+        <ExportButton 
+          endpoint="/export/users"
+          filename={`users_${new Date().toISOString().split('T')[0]}.csv`}
+          filters={{
+            role: roleFilter,
+            search: searchQuery,
+            filter: filterType,
+          }}
+        />
+      </div>
 
       <Card>
         <CardContent className="p-4">

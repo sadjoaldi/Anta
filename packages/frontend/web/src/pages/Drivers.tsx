@@ -6,11 +6,12 @@ import { Input } from "../components/ui/input";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Pagination } from "../components/ui/pagination";
+import { ExportButton } from "../components/ExportButton";
 import driverService from "../services/driver.service";
 import type { DriverWithUser } from "../types/api.types";
 
 export default function Drivers() {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const [page, setPage] = useState(1);
   const [drivers, setDrivers] = useState<DriverWithUser[]>([]);
   const [stats, setStats] = useState({ total: 0, active: 0, pending: 0, averageRating: 0 });
@@ -98,7 +99,16 @@ export default function Drivers() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Gestion chauffeurs</h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Gestion chauffeurs</h1>
+        <ExportButton 
+          endpoint="/export/drivers"
+          filename={`drivers_${new Date().toISOString().split('T')[0]}.csv`}
+          filters={{
+            kyc_status: kycFilter,
+          }}
+        />
+      </div>
       <Card>
         <CardContent className="p-4">
           <div className="grid md:grid-cols-4 gap-3">

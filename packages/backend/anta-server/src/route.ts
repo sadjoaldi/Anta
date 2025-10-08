@@ -8,6 +8,7 @@ import vehicleRoutes from './routes/vehicles.js';
 import paymentRoutes from './routes/payments.js';
 import statsRoutes from './routes/stats.js';
 import promotionRoutes from './routes/promotions.js';
+import exportRoutes from './routes/export.js';
 
 export function registerRoutes(app: Express) {
   // Healthcheck
@@ -25,4 +26,5 @@ export function registerRoutes(app: Express) {
   app.use('/api/rides', rideRoutes);
   app.use('/api/stats', statsRoutes);
   app.use('/api/promotions', promotionRoutes);
+  app.use('/api/export', exportRoutes);
 }

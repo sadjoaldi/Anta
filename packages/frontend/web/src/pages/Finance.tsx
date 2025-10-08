@@ -6,6 +6,7 @@ import { Input } from "../components/ui/input";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Pagination } from "../components/ui/pagination";
+import { ExportButton } from "../components/ExportButton";
 import paymentService from "../services/payment.service";
 import type { PaymentWithTrip } from "../types/api.types";
 
@@ -102,7 +103,19 @@ export default function Finance() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Suivi financier</h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Suivi financier</h1>
+        <ExportButton 
+          endpoint="/export/payments"
+          filename={`payments_${new Date().toISOString().split('T')[0]}.csv`}
+          filters={{
+            status: statusFilter,
+            method: methodFilter,
+            date_from: dateFrom,
+            date_to: dateTo,
+          }}
+        />
+      </div>
 
       <div className="grid md:grid-cols-4 gap-4">
         <Card>
