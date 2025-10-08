@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
+import { motion } from "framer-motion";
+import { DollarSign } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
 import { Input } from "../components/ui/input";
@@ -102,19 +104,45 @@ export default function Finance() {
   const failedPayments = payments.filter(p => p.status === 'failed');
 
   return (
-    <div className="space-y-4">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="space-y-6 pb-8"
+    >
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Suivi financier</h1>
-        <ExportButton 
-          endpoint="/export/payments"
-          filename={`payments_${new Date().toISOString().split('T')[0]}.csv`}
-          filters={{
-            status: statusFilter,
-            method: methodFilter,
-            date_from: dateFrom,
-            date_to: dateTo,
-          }}
-        />
+        <motion.div
+          initial={{ x: -20, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="flex items-center gap-3"
+        >
+          <div className="p-3 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl shadow-lg">
+            <DollarSign className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
+              Finances
+            </h1>
+            <p className="text-gray-500 text-sm mt-1">{payments.length} paiements affichés</p>
+          </div>
+        </motion.div>
+        <motion.div
+          initial={{ x: 20, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <ExportButton 
+            endpoint="/export/payments"
+            filename={`payments_${new Date().toISOString().split('T')[0]}.csv`}
+            filters={{
+              status: statusFilter,
+              method: methodFilter,
+              date_from: dateFrom,
+              date_to: dateTo,
+            }}
+          />
+        </motion.div>
       </div>
 
       <div className="grid md:grid-cols-4 gap-4">
@@ -286,6 +314,6 @@ export default function Finance() {
           )}
         </CardContent>
       </Card>
-    </div>
+    </motion.div>
   );
 }

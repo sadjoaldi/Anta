@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
+import { motion } from "framer-motion";
+import { Tags } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
 import { Input } from "../components/ui/input";
@@ -138,16 +140,41 @@ export default function Promotions() {
   const totalUsages = promotions.reduce((sum, p) => sum + p.usage_count, 0);
 
   return (
-    <div className="space-y-4">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="space-y-6 pb-8"
+    >
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Gestion promotions</h1>
-        <div className="flex gap-2">
+        <motion.div
+          initial={{ x: -20, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="flex items-center gap-3"
+        >
+          <div className="p-3 bg-gradient-to-br from-pink-500 to-rose-600 rounded-xl shadow-lg">
+            <Tags className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent">
+              Promotions
+            </h1>
+            <p className="text-gray-500 text-sm mt-1">{promotions.length} promotions créées</p>
+          </div>
+        </motion.div>
+        <motion.div
+          initial={{ x: 20, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="flex gap-2"
+        >
           <ExportButton 
             endpoint="/export/promotions"
             filename={`promotions_${new Date().toISOString().split('T')[0]}.csv`}
           />
           <Button onClick={() => setShowForm(true)}>+ Créer une promotion</Button>
-        </div>
+        </motion.div>
       </div>
 
       {/* Stats */}
@@ -380,6 +407,6 @@ export default function Promotions() {
           )}
         </CardContent>
       </Card>
-    </div>
+    </motion.div>
   );
 }

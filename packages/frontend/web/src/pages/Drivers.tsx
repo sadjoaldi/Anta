@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Car, CheckCircle, XCircle, RefreshCw, X, Star } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
 import { Input } from "../components/ui/input";
 import { Badge } from "../components/ui/badge";
-import { Button } from "../components/ui/button";
 import { Pagination } from "../components/ui/pagination";
 import { ExportButton } from "../components/ExportButton";
 import driverService from "../services/driver.service";
@@ -98,70 +99,139 @@ export default function Drivers() {
   };
 
   return (
-    <div className="space-y-4">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="space-y-6 pb-8"
+    >
+      {/* Header */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Gestion chauffeurs</h1>
-        <ExportButton 
-          endpoint="/export/drivers"
-          filename={`drivers_${new Date().toISOString().split('T')[0]}.csv`}
-          filters={{
-            kyc_status: kycFilter,
-          }}
-        />
-      </div>
-      <Card>
-        <CardContent className="p-4">
-          <div className="grid md:grid-cols-4 gap-3">
-            <div>
-              <div className="text-xs text-gray-600 mb-1">Date d'inscription</div>
-              <Input type="date" />
-            </div>
-            <div>
-              <div className="text-xs text-gray-600 mb-1">Statut KYC</div>
-              <select 
-                className="w-full border rounded-md h-10 px-3 text-sm"
-                value={kycFilter}
-                onChange={(e) => setKycFilter(e.target.value)}
-              >
-                <option value="">Tous</option>
-                <option value="pending">En attente</option>
-                <option value="approved">Validé</option>
-                <option value="rejected">Rejeté</option>
-              </select>
-            </div>
-            <div className="flex items-end gap-2">
-              <Button onClick={() => setKycFilter("")} variant="secondary">Réinitialiser</Button>
-            </div>
+        <motion.div
+          initial={{ x: -20, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="flex items-center gap-3"
+        >
+          <div className="p-3 bg-gradient-to-br from-fuchsia-500 to-pink-600 rounded-xl shadow-lg">
+            <Car className="h-6 w-6 text-white" />
           </div>
-        </CardContent>
-      </Card>
-
-      <div className="grid md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm text-gray-500">Chauffeurs actifs</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{stats.active}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm text-gray-500">En attente de validation</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{stats.pending}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm text-gray-500">Note moyenne</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{Number(stats.averageRating).toFixed(1)}</div>
-          </CardContent>
-        </Card>
+          <div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-fuchsia-600 to-pink-600 bg-clip-text text-transparent">
+              Chauffeurs
+            </h1>
+            <p className="text-gray-500 text-sm mt-1">{drivers.length} chauffeurs affichés</p>
+          </div>
+        </motion.div>
+        <motion.div
+          initial={{ x: 20, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <ExportButton 
+            endpoint="/export/drivers"
+            filename={`drivers_${new Date().toISOString().split('T')[0]}.csv`}
+            filters={{
+              kyc_status: kycFilter,
+            }}
+          />
+        </motion.div>
       </div>
+      {/* Filtres */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+      >
+        <Card className="border-none shadow-lg">
+          <CardContent className="p-6">
+            <div className="grid md:grid-cols-4 gap-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Date d'inscription</label>
+                <Input type="date" className="rounded-lg" />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Statut KYC</label>
+                <select 
+                  className="w-full border border-gray-300 rounded-lg h-10 px-3 text-sm focus:ring-2 focus:ring-fuchsia-500 focus:border-transparent"
+                  value={kycFilter}
+                  onChange={(e) => setKycFilter(e.target.value)}
+                >
+                  <option value="">Tous</option>
+                  <option value="pending">En attente</option>
+                  <option value="approved">Validé</option>
+                  <option value="rejected">Rejeté</option>
+                </select>
+              </div>
+              <div className="flex items-end gap-2">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setKycFilter("")}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                  Réinitialiser
+                </motion.button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Stats Cards */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+        className="grid md:grid-cols-3 gap-4"
+      >
+        <motion.div whileHover={{ scale: 1.02, y: -5 }}>
+          <Card className="border-none shadow-lg overflow-hidden bg-gradient-to-br from-white to-gray-50">
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 mb-2">Chauffeurs actifs</p>
+                  <h3 className="text-3xl font-bold text-gray-900">{stats.active}</h3>
+                </div>
+                <div className="p-3 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl shadow-lg">
+                  <CheckCircle className="h-6 w-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+        <motion.div whileHover={{ scale: 1.02, y: -5 }}>
+          <Card className="border-none shadow-lg overflow-hidden bg-gradient-to-br from-white to-gray-50">
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 mb-2">En attente</p>
+                  <h3 className="text-3xl font-bold text-gray-900">{stats.pending}</h3>
+                </div>
+                <div className="p-3 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl shadow-lg">
+                  <RefreshCw className="h-6 w-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+        <motion.div whileHover={{ scale: 1.02, y: -5 }}>
+          <Card className="border-none shadow-lg overflow-hidden bg-gradient-to-br from-white to-gray-50">
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 mb-2">Note moyenne</p>
+                  <h3 className="text-3xl font-bold text-gray-900">{Number(stats.averageRating).toFixed(1)}</h3>
+                </div>
+                <div className="p-3 bg-gradient-to-br from-yellow-500 to-amber-600 rounded-xl shadow-lg">
+                  <Star className="h-6 w-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </motion.div>
 
       <Card>
         <CardHeader>
@@ -170,7 +240,12 @@ export default function Drivers() {
         <CardContent>
           {loading ? (
             <div className="flex justify-center items-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              >
+                <RefreshCw className="h-8 w-8 text-fuchsia-600" />
+              </motion.div>
             </div>
           ) : (
             <>
@@ -213,34 +288,42 @@ export default function Drivers() {
                         <TableCell className="text-right space-x-2">
                           {driver.kyc_status === "pending" && (
                             <>
-                              <Button 
-                                size="sm" 
+                              <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
                                 onClick={() => handleApprove(driver.id)}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white rounded-lg text-sm font-medium transition-all shadow-sm"
                               >
+                                <CheckCircle className="h-4 w-4" />
                                 Approuver
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="outline"
+                              </motion.button>
+                              <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
                                 onClick={() => handleReject(driver.id)}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-sm font-medium transition-colors"
                               >
+                                <XCircle className="h-4 w-4" />
                                 Rejeter
-                              </Button>
+                              </motion.button>
                             </>
                           )}
                           {driver.kyc_status === "approved" && (
-                            <Button size="sm" variant="outline" disabled>
+                            <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-sm font-medium">
+                              <CheckCircle className="h-4 w-4" />
                               Approuvé
-                            </Button>
+                            </span>
                           )}
                           {driver.kyc_status === "rejected" && (
-                            <Button 
-                              size="sm" 
-                              variant="secondary"
+                            <motion.button
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
                               onClick={() => handleApprove(driver.id)}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-lg text-sm font-medium transition-all shadow-sm"
                             >
+                              <RefreshCw className="h-4 w-4" />
                               Réapprouver
-                            </Button>
+                            </motion.button>
                           )}
                         </TableCell>
                       </TableRow>
@@ -253,6 +336,6 @@ export default function Drivers() {
           )}
         </CardContent>
       </Card>
-    </div>
+    </motion.div>
   );
 }

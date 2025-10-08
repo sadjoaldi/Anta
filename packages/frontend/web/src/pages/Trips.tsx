@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
+import { motion } from "framer-motion";
+import { MapPin, XCircle, RefreshCw, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
 import { Input } from "../components/ui/input";
 import { Badge } from "../components/ui/badge";
-import { Button } from "../components/ui/button";
 import { Pagination } from "../components/ui/pagination";
 import { ExportButton } from "../components/ExportButton";
 import tripService from "../services/trip.service";
@@ -86,69 +87,108 @@ export default function Trips() {
   };
 
   return (
-    <div className="space-y-4">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="space-y-6 pb-8"
+    >
+      {/* Header */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Gestion trajets</h1>
-        <ExportButton 
-          endpoint="/export/trips"
-          filename={`trips_${new Date().toISOString().split('T')[0]}.csv`}
-          filters={{
-            status: statusFilter,
-            date_from: dateFrom,
-            date_to: dateTo,
-          }}
-        />
+        <motion.div
+          initial={{ x: -20, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="flex items-center gap-3"
+        >
+          <div className="p-3 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl shadow-lg">
+            <MapPin className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
+              Courses
+            </h1>
+            <p className="text-gray-500 text-sm mt-1">{trips.length} courses affichées</p>
+          </div>
+        </motion.div>
+        <motion.div
+          initial={{ x: 20, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <ExportButton 
+            endpoint="/export/trips"
+            filename={`trips_${new Date().toISOString().split('T')[0]}.csv`}
+            filters={{
+              status: statusFilter,
+              date_from: dateFrom,
+              date_to: dateTo,
+            }}
+          />
+        </motion.div>
       </div>
 
-      <Card>
-        <CardContent className="p-4">
-          <div className="grid md:grid-cols-5 gap-3">
-            <div>
-              <div className="text-xs text-gray-600 mb-1">Date début</div>
-              <Input 
-                type="date" 
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-              />
+      {/* Filtres */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+      >
+        <Card className="border-none shadow-lg">
+          <CardContent className="p-6">
+            <div className="grid md:grid-cols-5 gap-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Date début</label>
+                <Input 
+                  type="date" 
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className="rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Date fin</label>
+                <Input 
+                  type="date" 
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className="rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Statut</label>
+                <select 
+                  className="w-full border border-gray-300 rounded-lg h-10 px-3 text-sm focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                >
+                  <option value="">Tous</option>
+                  <option value="pending">En attente</option>
+                  <option value="accepted">Accepté</option>
+                  <option value="in_progress">En cours</option>
+                  <option value="completed">Completé</option>
+                  <option value="cancelled">Annulé</option>
+                </select>
+              </div>
+              <div className="flex items-end col-span-2">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    setStatusFilter("");
+                    setDateFrom("");
+                    setDateTo("");
+                  }}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                  Réinitialiser
+                </motion.button>
+              </div>
             </div>
-            <div>
-              <div className="text-xs text-gray-600 mb-1">Date fin</div>
-              <Input 
-                type="date" 
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-              />
-            </div>
-            <div>
-              <div className="text-xs text-gray-600 mb-1">Statut</div>
-              <select 
-                className="w-full border rounded-md h-10 px-3 text-sm"
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                <option value="">Tous</option>
-                <option value="pending">En attente</option>
-                <option value="accepted">Accepté</option>
-                <option value="in_progress">En cours</option>
-                <option value="completed">Completé</option>
-                <option value="cancelled">Annulé</option>
-              </select>
-            </div>
-            <div className="flex items-end col-span-2">
-              <Button 
-                variant="secondary"
-                onClick={() => {
-                  setStatusFilter("");
-                  setDateFrom("");
-                  setDateTo("");
-                }}
-              >
-                Réinitialiser
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </motion.div>
       <Card>
         <CardHeader>
           <CardTitle>Liste des trajets ({trips.length})</CardTitle>
@@ -156,7 +196,12 @@ export default function Trips() {
         <CardContent>
           {loading ? (
             <div className="flex justify-center items-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              >
+                <RefreshCw className="h-8 w-8 text-amber-600" />
+              </motion.div>
             </div>
           ) : (
             <>
@@ -203,13 +248,15 @@ export default function Trips() {
                         </TableCell>
                         <TableCell className="text-right space-x-2">
                           {trip.status !== 'cancelled' && trip.status !== 'completed' && (
-                            <Button 
-                              size="sm" 
-                              variant="outline"
+                            <motion.button
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
                               onClick={() => handleCancelTrip(trip.id)}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-sm font-medium transition-colors"
                             >
+                              <XCircle className="h-4 w-4" />
                               Annuler
-                            </Button>
+                            </motion.button>
                           )}
                         </TableCell>
                       </TableRow>
@@ -222,6 +269,6 @@ export default function Trips() {
           )}
         </CardContent>
       </Card>
-    </div>
+    </motion.div>
   );
 }

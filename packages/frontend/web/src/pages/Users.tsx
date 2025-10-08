@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Users as UsersIcon, Search, RefreshCw, X, UserCheck, UserX } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
 import { Input } from "../components/ui/input";
 import { Badge } from "../components/ui/badge";
-import { Button } from "../components/ui/button";
 import { Pagination } from "../components/ui/pagination";
 import { ExportButton } from "../components/ExportButton";
 import userService from "../services/user.service";
@@ -95,71 +96,112 @@ export default function Users() {
   };
 
   return (
-    <div className="space-y-4">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="space-y-6 pb-8"
+    >
+      {/* Header */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Utilisateurs</h1>
-        <ExportButton 
-          endpoint="/export/users"
-          filename={`users_${new Date().toISOString().split('T')[0]}.csv`}
-          filters={{
-            role: roleFilter,
-            search: searchQuery,
-            filter: filterType,
-          }}
-        />
+        <motion.div
+          initial={{ x: -20, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="flex items-center gap-3"
+        >
+          <div className="p-3 bg-gradient-to-br from-violet-500 to-fuchsia-600 rounded-xl shadow-lg">
+            <UsersIcon className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
+              Utilisateurs
+            </h1>
+            <p className="text-gray-500 text-sm mt-1">{users.length} utilisateurs affichés</p>
+          </div>
+        </motion.div>
+        <motion.div
+          initial={{ x: 20, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <ExportButton 
+            endpoint="/export/users"
+            filename={`users_${new Date().toISOString().split('T')[0]}.csv`}
+            filters={{
+              role: roleFilter,
+              search: searchQuery,
+              filter: filterType,
+            }}
+          />
+        </motion.div>
       </div>
 
-      <Card>
-        <CardContent className="p-4">
-          <div className="grid md:grid-cols-5 gap-3">
-            <div className="col-span-2">
-              <div className="text-xs text-gray-600 mb-1">Rechercher</div>
-              <Input 
-                placeholder="Nom ou téléphone..." 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+      {/* Filtres */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+      >
+        <Card className="border-none shadow-lg">
+          <CardContent className="p-6">
+            <div className="grid md:grid-cols-5 gap-4">
+              <div className="col-span-2">
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Rechercher</label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input 
+                    placeholder="Nom ou téléphone..." 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Rôle</label>
+                <select 
+                  className="w-full border border-gray-300 rounded-lg h-10 px-3 text-sm focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                  value={roleFilter}
+                  onChange={(e) => setRoleFilter(e.target.value)}
+                >
+                  <option value="">Tous</option>
+                  <option value="passenger">Passager</option>
+                  <option value="driver">Chauffeur</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Filtre</label>
+                <select 
+                  className="w-full border border-gray-300 rounded-lg h-10 px-3 text-sm focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                  value={filterType}
+                  onChange={(e) => setFilterType(e.target.value)}
+                >
+                  <option value="">Tous</option>
+                  <option value="new_today">Nouveaux aujourd'hui</option>
+                  <option value="active">Actifs (7j)</option>
+                </select>
+              </div>
+              <div className="flex items-end">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    setRoleFilter("");
+                    setSearchQuery("");
+                    setFilterType("");
+                  }}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                  Réinitialiser
+                </motion.button>
+              </div>
             </div>
-            <div>
-              <div className="text-xs text-gray-600 mb-1">Rôle</div>
-              <select 
-                className="w-full border rounded-md h-10 px-3 text-sm"
-                value={roleFilter}
-                onChange={(e) => setRoleFilter(e.target.value)}
-              >
-                <option value="">Tous</option>
-                <option value="passenger">Passager</option>
-                <option value="driver">Chauffeur</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
-            <div>
-              <div className="text-xs text-gray-600 mb-1">Filtre</div>
-              <select 
-                className="w-full border rounded-md h-10 px-3 text-sm"
-                value={filterType}
-                onChange={(e) => setFilterType(e.target.value)}
-              >
-                <option value="">Tous</option>
-                <option value="new_today">Nouveaux aujourd'hui</option>
-                <option value="active">Actifs (7j)</option>
-              </select>
-            </div>
-            <div className="flex items-end">
-              <Button 
-                variant="secondary" 
-                onClick={() => {
-                  setRoleFilter("");
-                  setSearchQuery("");
-                  setFilterType("");
-                }}
-              >
-                Réinitialiser
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </motion.div>
 
       <Card>
         <CardHeader>
@@ -168,7 +210,12 @@ export default function Users() {
         <CardContent>
           {loading ? (
             <div className="flex justify-center items-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              >
+                <RefreshCw className="h-8 w-8 text-violet-600" />
+              </motion.div>
             </div>
           ) : (
             <>
@@ -216,20 +263,25 @@ export default function Users() {
                         </TableCell>
                         <TableCell className="text-right space-x-2">
                           {user.is_active ? (
-                            <Button 
-                              size="sm" 
-                              variant="outline"
+                            <motion.button
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
                               onClick={() => handleSuspend(user.id)}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-sm font-medium transition-colors"
                             >
+                              <UserX className="h-4 w-4" />
                               Suspendre
-                            </Button>
+                            </motion.button>
                           ) : (
-                            <Button 
-                              size="sm"
+                            <motion.button
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
                               onClick={() => handleActivate(user.id)}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white rounded-lg text-sm font-medium transition-all shadow-sm"
                             >
+                              <UserCheck className="h-4 w-4" />
                               Activer
-                            </Button>
+                            </motion.button>
                           )}
                         </TableCell>
                       </TableRow>
@@ -242,6 +294,6 @@ export default function Users() {
           )}
         </CardContent>
       </Card>
-    </div>
+    </motion.div>
   );
 }
