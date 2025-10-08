@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Bell, User, Moon, Sun, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import authService from "../services/auth.service";
 
 export default function Topbar() {
   const navigate = useNavigate();
@@ -19,10 +20,17 @@ export default function Topbar() {
     localStorage.setItem("theme", theme);
   }, [theme]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
-    navigate("/login");
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+      navigate("/login", { replace: true });
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Force logout même en cas d'erreur
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+      navigate("/login", { replace: true });
+    }
   };
 
   return (
