@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 import { useAuth } from "../hooks/useAuth";
+import authService from "../services/auth.service";
 import colors from "../theme/colors";
 
 export default function RegisterScreen() {
@@ -42,19 +43,16 @@ export default function RegisterScreen() {
       setSending(true);
       clearError();
       
-      // TODO: Call API to send OTP
-      // await authService.sendOtp(phone);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Send OTP via API
+      await authService.sendOTP(phone, 'registration');
       
       // Navigate to OTP verification
       router.push({
         pathname: '/auth/verify-otp',
         params: { phone, name, email }
       });
-    } catch (err) {
-      Alert.alert("Erreur", "Impossible d'envoyer le code de vérification");
+    } catch (err: any) {
+      Alert.alert("Erreur", err?.message || "Impossible d'envoyer le code de vérification");
     } finally {
       setSending(false);
     }

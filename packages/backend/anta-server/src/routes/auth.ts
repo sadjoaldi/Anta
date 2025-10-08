@@ -6,7 +6,9 @@ import {
   logout,
   logoutAll,
   getMe,
-  changePassword
+  changePassword,
+  sendOTP,
+  verifyOTP
 } from '../controllers/authController.js';
 import { authenticate } from '../middleware/auth.js';
 import { authLimiter } from '../middleware/rateLimiter.js';
@@ -20,6 +22,10 @@ import {
 } from '../schemas/index.js';
 
 const router = Router();
+
+// OTP routes (public, rate limited)
+router.post('/send-otp', authLimiter, sendOTP);
+router.post('/verify-otp', authLimiter, verifyOTP);
 
 // Public routes with rate limiting + validation
 router.post('/register', authLimiter, validate(registerSchema), register);

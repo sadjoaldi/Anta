@@ -16,6 +16,7 @@ import {
   hashPassword,
   validatePasswordStrength,
 } from "../utils/password.js";
+import otpService from "../services/otp.service.js";
 
 /**
  * @desc    Register new user
@@ -384,6 +385,57 @@ export const changePassword = asyncHandler(
   }
 );
 
+/**
+ * @desc    Send OTP to phone number
+ * @route   POST /api/auth/send-otp
+ * @access  Public
+ */
+export const sendOTP = asyncHandler(async (req: Request, res: Response) => {
+  const { phone, purpose = 'registration' } = req.body;
+
+  if (!phone) {
+    throw ApiError.badRequest('Phone number is required');
+  }
+
+  // Check if phone already exists for registration
+  if (purpose === 'registration') {
+    if (await User.phoneExists(phone)) {
+      throw ApiError.conflict('Phone number already registered');
+    }
+  }
+
+  const result = await otpService.sendOTP(phone, purpose);
+
+  res.json(
+    ApiResponse.success({
+      message: 'OTP sent successfully',
+      expiresIn: result.expiresIn,
+    })
+  );
+});
+
+/**
+ * @desc    Verify OTP code
+ * @route   POST /api/auth/verify-otp
+ * @access  Public
+ */
+export const verifyOTP = asyncHandler(async (req: Request, res: Response) => {
+  const { phone, code, purpose = 'registration' } = req.body;
+
+  if (!phone || !code) {
+    throw ApiError.badRequest('Phone and code are required');
+  }
+
+  const result = await otpService.verifyOTP(phone, code, purpose);
+
+  res.json(
+    ApiResponse.success({
+      message: 'OTP verified successfully',
+      verified: result.success,
+    })
+  );
+});
+
 export default {
   register,
   login,
@@ -392,4 +444,6 @@ export default {
   logoutAll,
   getMe,
   changePassword,
+  sendOTP,
+  verifyOTP,
 };

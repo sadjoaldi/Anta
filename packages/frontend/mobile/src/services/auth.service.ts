@@ -133,6 +133,28 @@ class AuthService {
   async getStoredUser(): Promise<User | null> {
     return await storageService.getUser();
   }
+
+  /**
+   * Send OTP to phone number
+   */
+  async sendOTP(phone: string, purpose: 'registration' | 'login' | 'reset_password' = 'registration'): Promise<{ expiresIn: number }> {
+    const response = await apiClient.post<{ message: string; expiresIn: number }>(
+      '/auth/send-otp',
+      { phone, purpose }
+    );
+    return { expiresIn: response.expiresIn };
+  }
+
+  /**
+   * Verify OTP code
+   */
+  async verifyOTP(phone: string, code: string, purpose: 'registration' | 'login' | 'reset_password' = 'registration'): Promise<{ verified: boolean }> {
+    const response = await apiClient.post<{ message: string; verified: boolean }>(
+      '/auth/verify-otp',
+      { phone, code, purpose }
+    );
+    return { verified: response.verified };
+  }
 }
 
 export default new AuthService();

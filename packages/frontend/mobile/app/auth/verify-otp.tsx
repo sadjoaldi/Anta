@@ -12,6 +12,7 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import authService from '../../src/services/auth.service';
 import colors from '../../src/theme/colors';
 
 export default function VerifyOTPScreen() {
@@ -74,24 +75,21 @@ export default function VerifyOTPScreen() {
     try {
       setLoading(true);
       
-      // TODO: Call API to verify OTP
-      // await authService.verifyOtp(phone, code);
+      // Verify OTP via API
+      await authService.verifyOTP(phone, code, 'registration');
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock validation (accept any 4-digit code for now)
+      // Success - navigate to complete profile
       Alert.alert('Vérification réussie', 'Votre numéro a été confirmé !', [
         {
           text: 'Continuer',
           onPress: () => router.push({
             pathname: '/auth/complete-profile',
-            params: { phone }
+            params: { phone, name: params.name, email: params.email }
           })
         }
       ]);
-    } catch (error) {
-      Alert.alert('Erreur', 'Code invalide. Veuillez réessayer.');
+    } catch (error: any) {
+      Alert.alert('Erreur', error?.message || 'Code invalide. Veuillez réessayer.');
       setOtp(['', '', '', '']);
       inputRefs.current[0]?.focus();
     } finally {
@@ -105,19 +103,16 @@ export default function VerifyOTPScreen() {
     try {
       setLoading(true);
       
-      // TODO: Call API to resend OTP
-      // await authService.sendOtp(phone);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Resend OTP via API
+      await authService.sendOTP(phone, 'registration');
       
       Alert.alert('Code renvoyé', 'Un nouveau code a été envoyé par SMS');
       setResendTimer(60);
       setCanResend(false);
       setOtp(['', '', '', '']);
       inputRefs.current[0]?.focus();
-    } catch (error) {
-      Alert.alert('Erreur', 'Impossible de renvoyer le code');
+    } catch (error: any) {
+      Alert.alert('Erreur', error?.message || 'Impossible de renvoyer le code');
     } finally {
       setLoading(false);
     }
