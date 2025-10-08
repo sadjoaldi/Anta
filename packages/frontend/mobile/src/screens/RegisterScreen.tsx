@@ -15,18 +15,17 @@ import colors from "../theme/colors";
 
 export default function RegisterScreen() {
   const router = useRouter();
-  const { register, loading, error, clearError } = useAuth();
+  const { loading, error, clearError } = useAuth();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [sending, setSending] = useState(false);
 
   const handleRegister = async () => {
     // Validation
-    if (!name || !phone || !password) {
-      Alert.alert("Erreur", "Veuillez remplir tous les champs obligatoires");
+    if (!name || !phone) {
+      Alert.alert("Erreur", "Veuillez remplir le nom et le téléphone");
       return;
     }
 
@@ -39,36 +38,25 @@ export default function RegisterScreen() {
       return;
     }
 
-    // Vérifier longueur mot de passe
-    if (password.length < 8) {
-      Alert.alert(
-        "Mot de passe",
-        "Le mot de passe doit contenir au moins 8 caractères"
-      );
-      return;
-    }
-
-    // Vérifier confirmation
-    if (password !== confirmPassword) {
-      Alert.alert("Erreur", "Les mots de passe ne correspondent pas");
-      return;
-    }
-
     try {
+      setSending(true);
       clearError();
-      await register({
-        name,
-        phone,
-        password,
-        email: email || undefined,
-        role: "passenger", // Tous les nouveaux users sont passengers par défaut
+      
+      // TODO: Call API to send OTP
+      // await authService.sendOtp(phone);
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Navigate to OTP verification
+      router.push({
+        pathname: '/auth/verify-otp',
+        params: { phone, name, email }
       });
-      // Navigation automatique si succès
-      Alert.alert("Succès", "Compte créé avec succès !", [
-        { text: "OK", onPress: () => router.replace("/(tabs)") },
-      ]);
     } catch (err) {
-      Alert.alert("Inscription échouée", error || "Une erreur est survenue");
+      Alert.alert("Erreur", "Impossible d'envoyer le code de vérification");
+    } finally {
+      setSending(false);
     }
   };
 
@@ -82,64 +70,55 @@ export default function RegisterScreen() {
         <TextInput
           style={styles.input}
           placeholder="Nom complet *"
+          placeholderTextColor="#999"
           value={name}
           onChangeText={setName}
-          editable={!loading}
-        />
-
-        <TextInput
-          style={styles.input}
-          placeholder="Email (optionnel)"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          editable={!loading}
+          editable={!sending}
         />
 
         <TextInput
           style={styles.input}
           placeholder="+224612345678 *"
+          placeholderTextColor="#999"
           value={phone}
           onChangeText={setPhone}
           keyboardType="phone-pad"
-          editable={!loading}
+          editable={!sending}
         />
 
         <TextInput
           style={styles.input}
-          placeholder="Mot de passe (min 8 caractères) *"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          editable={!loading}
+          placeholder="Email (optionnel)"
+          placeholderTextColor="#999"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          editable={!sending}
         />
 
-        <TextInput
-          style={styles.input}
-          placeholder="Confirmer le mot de passe *"
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          secureTextEntry
-          editable={!loading}
-        />
+        <View style={styles.infoBox}>
+          <Text style={styles.infoText}>
+            📱 Un code de vérification sera envoyé à ce numéro
+          </Text>
+        </View>
 
         <TouchableOpacity
-          style={[styles.primary, loading && styles.primaryDisabled]}
+          style={[styles.primary, sending && styles.primaryDisabled]}
           onPress={handleRegister}
-          disabled={loading}
+          disabled={sending}
         >
-          {loading ? (
+          {sending ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.primaryText}>S'inscrire</Text>
+            <Text style={styles.primaryText}>Continuer</Text>
           )}
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.link}
           onPress={() => router.push("/auth/login")}
-          disabled={loading}
+          disabled={sending}
         >
           <Text style={styles.linkText}>J'ai déjà un compte</Text>
         </TouchableOpacity>
@@ -178,6 +157,21 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 12,
     marginBottom: 12,
+    fontSize: 16,
+    color: "#1a1a1a",
+    backgroundColor: "#fff",
+  },
+  infoBox: {
+    backgroundColor: "#f0f9ff",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.primary,
+  },
+  infoText: {
+    fontSize: 14,
+    color: "#666",
   },
   primary: {
     backgroundColor: colors.primary,

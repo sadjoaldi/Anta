@@ -16,5 +16,5 @@ export default function Index() {
   }
 
   // Redirect based on auth state
-  return <Redirect href={isAuthenticated ? '/(tabs)' : '/auth/login'} />;
+  return <Redirect href={isAuthenticated ? '/(tabs)' : '/welcome'} />;
 }

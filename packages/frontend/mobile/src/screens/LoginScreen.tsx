@@ -55,6 +55,7 @@ export default function LoginScreen() {
       <TextInput
         style={styles.input}
         placeholder="+224612345678"
+        placeholderTextColor="#999"
         value={phone}
         onChangeText={setPhone}
         keyboardType="phone-pad"
@@ -65,6 +66,7 @@ export default function LoginScreen() {
       <TextInput
         style={styles.input}
         placeholder="Mot de passe"
+        placeholderTextColor="#999"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
@@ -121,6 +123,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 12,
     marginBottom: 12,
+    fontSize: 16,
+    color: "#1a1a1a",
+    backgroundColor: "#fff",
   },
   primary: {
     backgroundColor: colors.primary,
