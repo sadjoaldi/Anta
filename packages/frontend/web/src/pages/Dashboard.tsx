@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { RevenueChart } from "../components/charts/RevenueChart";
+import { PaymentMethodsChart } from "../components/charts/PaymentMethodsChart";
+import { UserRegistrationsChart } from "../components/charts/UserRegistrationsChart";
+import { TripCompletionChart } from "../components/charts/TripCompletionChart";
 import statsService from "../services/stats.service";
 import type { DashboardStats } from "../services/stats.service";
 
@@ -273,6 +277,21 @@ export default function Dashboard() {
                 </div>
               </CardContent>
             </Card>
+          </div>
+        </div>
+      )}
+
+      {/* Analytics Section */}
+      {stats && (
+        <div className="mt-6">
+          <h2 className="text-lg font-semibold mb-3">📊 Analytics</h2>
+          <div className="grid md:grid-cols-2 gap-4 mb-4">
+            <RevenueChart />
+            <PaymentMethodsChart />
+          </div>
+          <div className="grid md:grid-cols-2 gap-4">
+            <UserRegistrationsChart />
+            <TripCompletionChart />
           </div>
         </div>
       )}

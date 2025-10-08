@@ -1,10 +1,25 @@
 import { Router } from 'express';
-import { getDashboardStats } from '../controllers/statsController.js';
+import {
+  getDashboardStats,
+  getRevenueChart,
+  getPaymentMethodsChart,
+  getUserRegistrationsChart,
+  getTripCompletionChart,
+} from '../controllers/statsController.js';
 import { authenticate, requireAdmin } from '../middleware/auth.js';
 
 const router = Router();
 
-// Dashboard statistics (admin only)
-router.get('/dashboard', authenticate, requireAdmin, getDashboardStats);
+// All routes require admin access
+router.use(authenticate, requireAdmin);
+
+// Dashboard statistics
+router.get('/dashboard', getDashboardStats);
+
+// Chart data endpoints
+router.get('/revenue-chart', getRevenueChart);
+router.get('/payment-methods', getPaymentMethodsChart);
+router.get('/user-registrations', getUserRegistrationsChart);
+router.get('/trip-completion', getTripCompletionChart);
 
 export default router;

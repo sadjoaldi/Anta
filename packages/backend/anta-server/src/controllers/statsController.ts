@@ -129,3 +129,144 @@ export const getDashboardStats = asyncHandler(async (req: Request, res: Response
     })
   );
 });
+
+/**
+ * @desc    Get revenue chart data by period
+ * @route   GET /api/stats/revenue-chart?period=7d|30d|12m
+ * @access  Private/Admin
+ */
+export const getRevenueChart = asyncHandler(async (req: Request, res: Response) => {
+  const period = req.query.period as string || '7d';
+  
+  let dateFormat: string;
+  let daysBack: number;
+  
+  switch (period) {
+    case '30d':
+      dateFormat = '%Y-%m-%d';
+      daysBack = 30;
+      break;
+    case '12m':
+      dateFormat = '%Y-%m';
+      daysBack = 365;
+      break;
+    case '7d':
+    default:
+      dateFormat = '%Y-%m-%d';
+      daysBack = 7;
+      break;
+  }
+  
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - daysBack);
+  
+  const revenueData = await knex('payments')
+    .select(
+      knex.raw(`DATE_FORMAT(created_at, '${dateFormat}') as date`),
+      knex.raw('SUM(amount) as revenue'),
+      knex.raw('COUNT(*) as count')
+    )
+    .where('status', 'completed')
+    .where('created_at', '>=', startDate)
+    .groupBy('date')
+    .orderBy('date', 'asc');
+  
+  res.json(ApiResponse.success(revenueData));
+});
+
+/**
+ * @desc    Get payment methods distribution
+ * @route   GET /api/stats/payment-methods
+ * @access  Private/Admin
+ */
+export const getPaymentMethodsChart = asyncHandler(async (req: Request, res: Response) => {
+  const methodsData = await knex('payments')
+    .select(
+      'method',
+      knex.raw('COUNT(*) as count'),
+      knex.raw('SUM(amount) as total')
+    )
+    .where('status', 'completed')
+    .groupBy('method');
+  
+  res.json(ApiResponse.success(methodsData));
+});
+
+/**
+ * @desc    Get user registrations over time
+ * @route   GET /api/stats/user-registrations?period=7d|30d|12m
+ * @access  Private/Admin
+ */
+export const getUserRegistrationsChart = asyncHandler(async (req: Request, res: Response) => {
+  const period = req.query.period as string || '30d';
+  
+  let dateFormat: string;
+  let daysBack: number;
+  
+  switch (period) {
+    case '7d':
+      dateFormat = '%Y-%m-%d';
+      daysBack = 7;
+      break;
+    case '12m':
+      dateFormat = '%Y-%m';
+      daysBack = 365;
+      break;
+    case '30d':
+    default:
+      dateFormat = '%Y-%m-%d';
+      daysBack = 30;
+      break;
+  }
+  
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - daysBack);
+  
+  const registrationsData = await knex('users')
+    .select(
+      knex.raw(`DATE_FORMAT(created_at, '${dateFormat}') as date`),
+      knex.raw('COUNT(*) as count'),
+      knex.raw('SUM(CASE WHEN role = "passenger" THEN 1 ELSE 0 END) as passengers'),
+      knex.raw('SUM(CASE WHEN role = "driver" THEN 1 ELSE 0 END) as drivers')
+    )
+    .where('created_at', '>=', startDate)
+    .groupBy('date')
+    .orderBy('date', 'asc');
+  
+  res.json(ApiResponse.success(registrationsData));
+});
+
+/**
+ * @desc    Get trip completion rate over time
+ * @route   GET /api/stats/trip-completion?period=7d|30d
+ * @access  Private/Admin
+ */
+export const getTripCompletionChart = asyncHandler(async (req: Request, res: Response) => {
+  const period = req.query.period as string || '7d';
+  const daysBack = period === '30d' ? 30 : 7;
+  
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - daysBack);
+  
+  const tripData = await knex('trips')
+    .select(
+      knex.raw(`DATE_FORMAT(created_at, '%Y-%m-%d') as date`),
+      knex.raw('COUNT(*) as total'),
+      knex.raw('SUM(CASE WHEN status = "completed" THEN 1 ELSE 0 END) as completed'),
+      knex.raw('SUM(CASE WHEN status = "cancelled" THEN 1 ELSE 0 END) as cancelled')
+    )
+    .where('created_at', '>=', startDate)
+    .groupBy('date')
+    .orderBy('date', 'asc');
+  
+  // Calculate completion rate for each day
+  const chartData = tripData.map(day => ({
+    date: day.date,
+    total: day.total,
+    completed: day.completed,
+    cancelled: day.cancelled,
+    completion_rate: day.total > 0 ? ((day.completed / day.total) * 100).toFixed(1) : 0
+  }));
+  
+  res.json(ApiResponse.success(chartData));
+});
