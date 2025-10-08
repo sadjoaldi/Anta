@@ -289,6 +289,18 @@ export interface PromotionUsage {
   used_at: Date;
 }
 
+export interface AdminLog {
+  id: number;
+  admin_id: number;
+  action: string;
+  resource_type: string;
+  resource_id?: number | null;
+  details?: string | null;
+  ip_address?: string | null;
+  user_agent?: string | null;
+  created_at: Date;
+}
+
 // Update types (all fields optional except id)
 export type UserUpdate = Partial<Omit<User, 'id' | 'created_at'>>;
 export type DriverUpdate = Partial<Omit<Driver, 'id'>>;

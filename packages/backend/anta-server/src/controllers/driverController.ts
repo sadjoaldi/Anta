@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { ApiError } from '../utils/ApiError.js';
+import { logAdminAction } from '../utils/adminLogger.js';
 import Driver from '../models/Driver.js';
 import User from '../models/User.js';
 import { DriverStatus } from '../models/types.js';
@@ -350,6 +351,16 @@ export const approveDriverKyc = asyncHandler(async (req: Request, res: Response)
   
   const updatedDriver = await Driver.findById(driverId);
 
+  // Log admin action
+  await logAdminAction({
+    adminId: (req.user as any).userId,
+    action: 'driver_kyc_approved',
+    resourceType: 'driver',
+    resourceId: driverId,
+    details: { driver_name: updatedDriver?.license_number, user_id: driver.user_id },
+    req,
+  });
+
   res.json(ApiResponse.success(updatedDriver, 'Driver KYC approved successfully'));
 });
 
@@ -379,6 +390,16 @@ export const rejectDriverKyc = asyncHandler(async (req: Request, res: Response) 
   await User.updateById(driver.user_id, { role: 'passenger' });
   
   const updatedDriver = await Driver.findById(driverId);
+
+  // Log admin action
+  await logAdminAction({
+    adminId: (req.user as any).userId,
+    action: 'driver_kyc_rejected',
+    resourceType: 'driver',
+    resourceId: driverId,
+    details: { reason, driver_name: updatedDriver?.license_number, user_id: driver.user_id },
+    req,
+  });
 
   // TODO: Send notification to driver with rejection reason
   // await notificationService.sendKycRejection(driver.user_id, reason);

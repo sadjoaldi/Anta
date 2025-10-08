@@ -10,6 +10,7 @@ import Promotions from "./pages/Promotions";
 import Stats from "./pages/Stats";
 import Trips from "./pages/Trips";
 import Users from "./pages/Users";
+import AdminLogs from "./pages/AdminLogs";
 
 export default function App() {
   return (
@@ -26,6 +27,7 @@ export default function App() {
         <Route path="dashboard/trips" element={<Trips />} />
         <Route path="dashboard/finance" element={<Finance />} />
         <Route path="dashboard/promotions" element={<Promotions />} />
+        <Route path="dashboard/logs" element={<AdminLogs />} />
         <Route path="dashboard/stats" element={<Stats />} />
       </Route>
 

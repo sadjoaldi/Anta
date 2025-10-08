@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { ApiError } from '../utils/ApiError.js';
+import { logAdminAction } from '../utils/adminLogger.js';
+import knex from '../utils/knex.js';
 import User from '../models/User.js';
 
 /**
@@ -33,13 +35,13 @@ export const getUsers = asyncHandler(async (req: Request, res: Response) => {
   if (filter === 'new_today') {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    query = User.db('users')
+    query = knex('users')
       .where('created_at', '>=', today)
       .limit(limit)
       .offset(offset);
   } else if (filter === 'active') {
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    query = User.db('users')
+    query = knex('users')
       .where('last_login_at', '>=', weekAgo)
       .limit(limit)
       .offset(offset);
@@ -61,10 +63,10 @@ export const getUsers = asyncHandler(async (req: Request, res: Response) => {
   if (filter === 'new_today') {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    total = await User.db('users').where('created_at', '>=', today).count('* as count').first().then((r: any) => r?.count || 0);
+    total = await knex('users').where('created_at', '>=', today).count('* as count').first().then((r: any) => r?.count || 0);
   } else if (filter === 'active') {
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    total = await User.db('users').where('last_login_at', '>=', weekAgo).count('* as count').first().then((r: any) => r?.count || 0);
+    total = await knex('users').where('last_login_at', '>=', weekAgo).count('* as count').first().then((r: any) => r?.count || 0);
   }
 
   res.json(ApiResponse.paginated(filteredUsers, page, limit, total));
@@ -142,6 +144,7 @@ export const createUser = asyncHandler(async (req: Request, res: Response) => {
     name,
     password_hash,
     default_payment_method_id,
+    role: 'passenger',
     is_active: true
   });
 
@@ -238,10 +241,21 @@ export const suspendUser = asyncHandler(async (req: Request, res: Response) => {
 
   await User.updateById(userId, {
     is_active: false,
-    updated_at: new Date()
+    updated_at: new Date(),
   });
 
   const updatedUser = await User.findById(userId);
+
+  // Log admin action
+  await logAdminAction({
+    adminId: (req.user as any).userId,
+    action: 'user_suspended',
+    resourceType: 'user',
+    resourceId: userId,
+    details: { user_name: updatedUser?.name, user_phone: updatedUser?.phone },
+    req,
+  });
+
   res.json(ApiResponse.success(updatedUser, 'User suspended successfully'));
 });
 
@@ -264,9 +278,20 @@ export const activateUser = asyncHandler(async (req: Request, res: Response) => 
 
   await User.updateById(userId, {
     is_active: true,
-    updated_at: new Date()
+    updated_at: new Date(),
   });
 
   const updatedUser = await User.findById(userId);
+
+  // Log admin action
+  await logAdminAction({
+    adminId: (req.user as any).userId,
+    action: 'user_activated',
+    resourceType: 'user',
+    resourceId: userId,
+    details: { user_name: updatedUser?.name, user_phone: updatedUser?.phone },
+    req,
+  });
+
   res.json(ApiResponse.success(updatedUser, 'User activated successfully'));
 });

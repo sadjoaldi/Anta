@@ -117,6 +117,20 @@ export interface Promotion {
   updated_at: string;
 }
 
+export interface AdminLog {
+  id: number;
+  admin_id: number;
+  admin_name?: string;
+  admin_email?: string;
+  action: string;
+  resource_type: string;
+  resource_id?: number | null;
+  details?: string | null;
+  ip_address?: string | null;
+  user_agent?: string | null;
+  created_at: string;
+}
+
 export interface LoginResponse {
   user: User;
   tokens: {
