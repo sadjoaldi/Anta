@@ -13,6 +13,9 @@ export default function TabsLayout() {
         tabBarIcon: ({ color, size, focused }) => {
           let name: keyof typeof Ionicons.glyphMap = 'ellipse';
           switch (route.name) {
+            case 'home':
+              name = focused ? 'home' : 'home-outline';
+              break;
             case 'search':
               name = focused ? 'search' : 'search-outline';
               break;
@@ -31,10 +34,11 @@ export default function TabsLayout() {
       })}
     >
       <Tabs.Screen name="index" options={{ href: null }} />
-      <Tabs.Screen name="search" options={{ title: 'Search' }} />
-      <Tabs.Screen name="trajet" options={{ title: 'Trajet' }} />
+      <Tabs.Screen name="home" options={{ title: 'Accueil' }} />
+      <Tabs.Screen name="search" options={{ title: 'Rechercher' }} />
+      <Tabs.Screen name="trajet" options={{ title: 'Trajets' }} />
       <Tabs.Screen name="messages" options={{ title: 'Messages' }} />
-      <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
+      <Tabs.Screen name="profile" options={{ title: 'Profil' }} />
     </Tabs>
   );
 }

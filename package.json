@@ -6,5 +6,8 @@
     "dev:backend": "npm --prefix packages/backend/anta-server run dev",
     "dev:web": "npm --prefix packages/frontend/web run dev",
     "dev:mobile": "npm --prefix packages/frontend/mobile run start"
+  },
+  "dependencies": {
+    "eas-cli": "^16.20.4"
   }
 }

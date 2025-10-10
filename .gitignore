@@ -44,3 +44,9 @@ packages/frontend/web/.cache/
 
 # OS
 Icon?
+
+# DOC
+GOOGLE_MAPS_INTEGRATION.md
+HOME_SCREEN_SETUP.md
+OTP_IMPLEMENTATION_SUMMARY.md
+OTP_QUICKSTART.md
