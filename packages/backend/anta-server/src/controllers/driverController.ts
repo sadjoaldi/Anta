@@ -89,11 +89,34 @@ export const getOnlineDrivers = asyncHandler(async (req: Request, res: Response)
 });
 
 /**
- * @desc    Get available drivers
+ * @desc    Get available drivers (with optional location filter)
  * @route   GET /api/drivers/available
- * @access  Private
+ * @access  Public (for mobile app to see nearby drivers)
  */
 export const getAvailableDrivers = asyncHandler(async (req: Request, res: Response) => {
+  const { lat, lng, radius = 5000 } = req.query;
+
+  // If location provided, search nearby drivers
+  if (lat && lng) {
+    const latitude = parseFloat(lat as string);
+    const longitude = parseFloat(lng as string);
+    const searchRadius = parseInt(radius as string);
+
+    if (isNaN(latitude) || isNaN(longitude)) {
+      throw ApiError.badRequest('Invalid coordinates');
+    }
+
+    const drivers = await Driver.getAvailableNearby(latitude, longitude, searchRadius);
+
+    return res.json(ApiResponse.success({
+      drivers,
+      count: drivers.length,
+      location: { latitude, longitude },
+      radius: searchRadius
+    }));
+  }
+
+  // Otherwise, return all available drivers with pagination
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 20;
   const offset = (page - 1) * limit;

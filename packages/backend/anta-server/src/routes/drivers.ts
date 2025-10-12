@@ -27,8 +27,8 @@ router.get('/', authenticate, getDrivers); // Tous les utilisateurs authentifié
 router.post('/', authenticate, createDriver); // Authenticated users (can create own profile) / Admin (can create for any user)
 
 // Query routes (must be before :id)
-router.get('/online', authenticate, getOnlineDrivers); // Public pour voir les drivers disponibles
-router.get('/available', authenticate, getAvailableDrivers); // Public pour voir les drivers disponibles
+router.get('/online', authenticate, getOnlineDrivers); // Authenticated users
+router.get('/available', getAvailableDrivers); // Public - for mobile app to see nearby drivers
 router.get('/details', authenticate, requireAdmin, getDriversWithDetails); // Admin only
 router.get('/status/:status', authenticate, requireAdmin, getDriversByStatus); // Admin only
 router.get('/user/:userId', authenticate, getDriverByUserId); // Authenticated users

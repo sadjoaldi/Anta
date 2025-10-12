@@ -10,10 +10,11 @@ import {
   Platform,
   Alert,
 } from 'react-native';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker, PROVIDER_GOOGLE, Callout } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import colors from '../../src/theme/colors';
+import driverService, { Driver } from '../../src/services/driver.service';
 
 const { height } = Dimensions.get('window');
 
@@ -37,6 +38,8 @@ export default function HomeScreen() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [bottomSheetExpanded, setBottomSheetExpanded] = useState(false);
+  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [loadingDrivers, setLoadingDrivers] = useState(false);
   
   const mapRef = useRef<MapView>(null);
 
@@ -51,6 +54,19 @@ export default function HomeScreen() {
     { id: '2', address: 'Ratoma Center', timestamp: new Date() },
     { id: '3', address: 'Matam Avenue', timestamp: new Date() },
   ]);
+
+  // Load available drivers
+  const loadNearbyDrivers = async (latitude: number, longitude: number) => {
+    try {
+      setLoadingDrivers(true);
+      const response = await driverService.getAvailableDrivers(latitude, longitude, 5000);
+      setDrivers(response.drivers);
+    } catch (error) {
+      console.error('❌ Error loading drivers:', error);
+    } finally {
+      setLoadingDrivers(false);
+    }
+  };
 
   useEffect(() => {
     (async () => {
@@ -67,16 +83,51 @@ export default function HomeScreen() {
 
       // Get current location
       try {
-        let location = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.High,
-        });
+        // 🔧 DEV MODE: Force location to Conakry for testing
+        const DEV_MODE = true; // Set to false to use real GPS
+        
+        let location;
+        if (DEV_MODE) {
+          // Simulate location in Conakry, Guinea (slightly offset from driver position)
+          location = {
+            coords: {
+              latitude: 9.6450,  // Décalé de ~400m au nord
+              longitude: -13.5820,  // Décalé de ~300m à l'ouest
+              altitude: 0,
+              accuracy: 100,
+              altitudeAccuracy: 0,
+              heading: 0,
+              speed: 0,
+            },
+            timestamp: Date.now(),
+          } as Location.LocationObject;
+        } else {
+          location = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.High,
+          });
+        }
+        
         setLocation(location);
+        
+        // Load nearby drivers
+        await loadNearbyDrivers(location.coords.latitude, location.coords.longitude);
       } catch (error) {
         console.error('Error getting location:', error);
         setErrorMsg('Impossible de récupérer votre position');
       }
     })();
   }, []);
+
+  // Refresh drivers every 10 seconds
+  useEffect(() => {
+    if (!location) return;
+
+    const interval = setInterval(() => {
+      loadNearbyDrivers(location.coords.latitude, location.coords.longitude);
+    }, 10000); // 10 seconds
+
+    return () => clearInterval(interval);
+  }, [location]);
 
   const handleCenterOnUser = () => {
     if (location && mapRef.current) {
@@ -136,8 +187,53 @@ export default function HomeScreen() {
               longitude: location.coords.longitude,
             }}
             title="Votre position"
+            pinColor={colors.primary}
           />
         )}
+
+        {/* Driver markers */}
+        {drivers.map((driver) => {
+          if (!driver.current_latitude || !driver.current_longitude) return null;
+          
+          return (
+            <Marker
+              key={driver.id}
+              coordinate={{
+                latitude: driver.current_latitude,
+                longitude: driver.current_longitude,
+              }}
+              pinColor="#4CAF50"
+            >
+              <View style={styles.driverMarker}>
+                <Ionicons 
+                  name={driver.vehicle_type === 'Moto' ? 'bicycle' : 'car'} 
+                  size={20} 
+                  color="#fff" 
+                />
+              </View>
+              <Callout style={styles.callout}>
+                <View style={styles.calloutContent}>
+                  <Text style={styles.calloutName}>{driver.user?.name || 'Chauffeur'}</Text>
+                  <View style={styles.calloutInfo}>
+                    <Ionicons name="star" size={14} color="#FFC107" />
+                    <Text style={styles.calloutRating}>{Number(driver.rating_avg || 0).toFixed(1)}</Text>
+                    <Text style={styles.calloutTrips}>({Number(driver.total_trips || 0)} courses)</Text>
+                  </View>
+                  {driver.distance && (
+                    <Text style={styles.calloutDistance}>
+                      À {(driver.distance / 1000).toFixed(1)} km
+                    </Text>
+                  )}
+                  {driver.vehicle_type && (
+                    <Text style={styles.calloutVehicle}>
+                      {driver.vehicle_brand || 'N/A'} {driver.vehicle_model || ''} {driver.vehicle_color ? `(${driver.vehicle_color})` : ''}
+                    </Text>
+                  )}
+                </View>
+              </Callout>
+            </Marker>
+          );
+        })}
       </MapView>
 
       {/* Center on user button */}
@@ -167,6 +263,16 @@ export default function HomeScreen() {
           style={styles.bottomSheetContent}
           showsVerticalScrollIndicator={false}
         >
+          {/* Drivers Count Badge */}
+          {drivers.length > 0 && (
+            <View style={styles.driversBadge}>
+              <Ionicons name="car" size={16} color="#4CAF50" />
+              <Text style={styles.driversBadgeText}>
+                {drivers.length} chauffeur{drivers.length > 1 ? 's' : ''} disponible{drivers.length > 1 ? 's' : ''}
+              </Text>
+            </View>
+          )}
+
           {/* Search Input */}
           <View style={styles.searchContainer}>
             <View style={styles.searchInputWrapper}>
@@ -290,6 +396,22 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
   },
+  driversBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: '#E8F5E9',
+    borderRadius: 20,
+    marginBottom: 16,
+  },
+  driversBadgeText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#4CAF50',
+  },
   searchContainer: {
     marginBottom: 20,
   },
@@ -369,5 +491,59 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#1a1a1a',
     fontWeight: '500',
+  },
+  // Driver marker styles
+  driverMarker: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#4CAF50',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  // Callout styles
+  callout: {
+    minWidth: 200,
+  },
+  calloutContent: {
+    padding: 10,
+  },
+  calloutName: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1a1a1a',
+    marginBottom: 4,
+  },
+  calloutInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+    gap: 4,
+  },
+  calloutRating: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1a1a1a',
+  },
+  calloutTrips: {
+    fontSize: 12,
+    color: '#666',
+  },
+  calloutDistance: {
+    fontSize: 13,
+    color: colors.primary,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  calloutVehicle: {
+    fontSize: 12,
+    color: '#666',
   },
 });

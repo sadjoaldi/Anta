@@ -50,6 +50,10 @@ export interface Driver {
   bank_name?: string | null;
   account_number?: string | null;
   account_holder?: string | null;
+  // Location information
+  current_latitude?: number | null;
+  current_longitude?: number | null;
+  location_updated_at?: Date | null;
 }
 
 export interface Vehicle {

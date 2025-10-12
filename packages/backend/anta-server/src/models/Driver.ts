@@ -136,6 +136,60 @@ export class DriverModel extends BaseModel<Driver, DriverInsert, DriverUpdate> {
   async updateKycStatus(id: number, kycStatus: 'pending' | 'approved' | 'rejected'): Promise<number> {
     return this.updateById(id, { kyc_status: kycStatus });
   }
+
+  /**
+   * Get available drivers near a location using Haversine formula
+   * @param latitude User latitude
+   * @param longitude User longitude
+   * @param radiusMeters Search radius in meters (default 5000m = 5km)
+   */
+  async getAvailableNearby(latitude: number, longitude: number, radiusMeters: number = 5000) {
+    // Haversine formula to calculate distance
+    const query = this.db('drivers')
+      .select(
+        'drivers.*',
+        this.db.raw(`JSON_OBJECT(
+          'id', users.id,
+          'name', users.name,
+          'phone', users.phone
+        ) as user`),
+        this.db.raw(`
+          (6371000 * acos(
+            cos(radians(?)) * cos(radians(current_latitude)) *
+            cos(radians(current_longitude) - radians(?)) +
+            sin(radians(?)) * sin(radians(current_latitude))
+          )) as distance
+        `, [latitude, longitude, latitude])
+      )
+      .leftJoin('users', 'drivers.user_id', 'users.id')
+      .where('drivers.status', 'online')
+      .whereNotNull('drivers.current_latitude')
+      .whereNotNull('drivers.current_longitude')
+      .havingRaw('distance <= ?', [radiusMeters])
+      .orderBy('distance', 'asc');
+
+    const results = await query;
+    
+    // Parse JSON_OBJECT result and format distance
+    return results.map((row: any) => ({
+      ...row,
+      user: typeof row.user === 'string' ? JSON.parse(row.user) : row.user,
+      distance: Math.round(row.distance) // Distance in meters
+    }));
+  }
+
+  /**
+   * Update driver location
+   */
+  async updateLocation(id: number, latitude: number, longitude: number): Promise<number> {
+    return await this.db(this.tableName)
+      .where({ id })
+      .update({
+        current_latitude: latitude,
+        current_longitude: longitude,
+        location_updated_at: this.db.fn.now()
+      });
+  }
 }
 
 // Export singleton instance
