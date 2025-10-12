@@ -1,17 +1,14 @@
 /**
  * Geocoding Controller
  * Handles address search and geocoding requests
+ * Uses Google Places API exclusively
  */
 
 import { Request, Response } from 'express';
 import { asyncHandler } from '../utils/asyncHandler.js';
-import nominatimService from '../services/geocoding.service.js';
-import googleService from '../services/geocoding-google.service.js';
+import geocodingService from '../services/geocoding-google.service.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { ApiError } from '../utils/ApiError.js';
-
-// Use Google Places if API key is configured, otherwise fallback to Nominatim
-const geocodingService = process.env.GOOGLE_MAPS_API_KEY ? googleService : nominatimService;
 
 /**
  * @desc    Search for places in Guinea
