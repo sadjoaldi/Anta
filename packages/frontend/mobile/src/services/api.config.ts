@@ -3,8 +3,12 @@
  */
 
 // API Base URL - configurable via environment variable
+// 🔧 Change this based on your setup:
+// - Android Emulator: http://10.0.2.2:4000/api
+// - iOS Simulator: http://localhost:4000/api
+// - Physical Device: http://YOUR_LOCAL_IP:4000/api (find with ipconfig/ifconfig)
 export const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL || "http://192.168.1.100:4000/api";
+  process.env.EXPO_PUBLIC_API_URL || "http://localhost:4000/api";
 
 // API Endpoints
 export const API_ENDPOINTS = {
