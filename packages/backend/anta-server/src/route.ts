@@ -11,6 +11,7 @@ import promotionRoutes from './routes/promotions.js';
 import exportRoutes from './routes/export.js';
 import adminLogRoutes from './routes/adminLogs.js';
 import geocodingRoutes from './routes/geocoding.js';
+import directionsRoutes from './routes/directions.js';
 
 export function registerRoutes(app: Express) {
   // Healthcheck
@@ -31,4 +32,5 @@ export function registerRoutes(app: Express) {
   app.use('/api/export', exportRoutes);
   app.use('/api/admin-logs', adminLogRoutes);
   app.use('/api/geocoding', geocodingRoutes);
+  app.use('/api/directions', directionsRoutes);
 }

@@ -11,11 +11,13 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import MapView, { Callout, Marker, PROVIDER_GOOGLE } from "react-native-maps";
+import MapView, { Callout, Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
 import AddressSearchModal from "../../src/components/AddressSearchModal";
 import { useAddressSearch } from "../../src/hooks/useAddressSearch";
+import { useRouteCalculation } from "../../src/hooks/useRouteCalculation";
 import driverService, { Driver } from "../../src/services/driver.service";
 import { PlaceSuggestion } from "../../src/services/geocoding.service";
+import directionsService from "../../src/services/directions.service";
 import colors from "../../src/theme/colors";
 
 const { height } = Dimensions.get("window");
@@ -63,6 +65,16 @@ export default function HomeScreen() {
         }
       : undefined,
   });
+
+  // Route calculation hook
+  const {
+    routeInfo,
+    polylineCoordinates,
+    loading: routeLoading,
+    error: routeError,
+    calculateRoute,
+    clearRoute,
+  } = useRouteCalculation();
 
   // Dummy data - À remplacer par de vraies données du backend
   const [savedPlaces] = useState<SavedPlace[]>([
@@ -182,12 +194,26 @@ export default function HomeScreen() {
     setSearchModalVisible(true);
   };
 
-  const handleSelectPlace = (place: PlaceSuggestion) => {
+  const handleSelectPlace = async (place: PlaceSuggestion) => {
     setDestination(place);
     clearSearch();
     setSearchModalVisible(false);
 
     console.log("Selected place:", place.name, `(${place.latitude}, ${place.longitude})`);
+
+    // Calculate route if user location is available
+    if (location) {
+      const origin = {
+        lat: location.coords.latitude,
+        lng: location.coords.longitude,
+      };
+      const destination = {
+        lat: place.latitude,
+        lng: place.longitude,
+      };
+
+      await calculateRoute(origin, destination);
+    }
 
     // Animate map to show both user location and destination
     if (location && mapRef.current) {
@@ -221,16 +247,11 @@ export default function HomeScreen() {
         longitudeDelta: 0.05,
       }, 1000);
     }
-
-    console.log(
-      "Destination set:",
-      place.name,
-      `(${place.latitude}, ${place.longitude})`
-    );
   };
 
   const handleClearDestination = () => {
     setDestination(null);
+    clearRoute();
     if (location && mapRef.current) {
       mapRef.current.animateToRegion({
         latitude: location.coords.latitude,
@@ -348,6 +369,17 @@ export default function HomeScreen() {
             </Callout>
           </Marker>
         )}
+
+        {/* Route polyline */}
+        {polylineCoordinates.length > 0 && (
+          <Polyline
+            coordinates={polylineCoordinates}
+            strokeColor={colors.primary}
+            strokeWidth={4}
+            lineCap="round"
+            lineJoin="round"
+          />
+        )}
       </MapView>
 
       {/* Center on user button */}
@@ -357,6 +389,53 @@ export default function HomeScreen() {
       >
         <Ionicons name="locate" size={24} color={colors.primary} />
       </TouchableOpacity>
+
+      {/* Route Info Card */}
+      {routeInfo && (
+        <View style={styles.routeInfoCard}>
+          <View style={styles.routeInfoHeader}>
+            <Text style={styles.routeInfoTitle}>Détails du trajet</Text>
+            {routeLoading && <Text style={styles.routeInfoLoading}>Calcul...</Text>}
+          </View>
+          
+          <View style={styles.routeInfoRow}>
+            <View style={styles.routeInfoItem}>
+              <Ionicons name="navigate" size={20} color={colors.primary} />
+              <View style={styles.routeInfoTextContainer}>
+                <Text style={styles.routeInfoLabel}>Distance</Text>
+                <Text style={styles.routeInfoValue}>{routeInfo.distance.text}</Text>
+              </View>
+            </View>
+
+            <View style={styles.routeInfoDivider} />
+
+            <View style={styles.routeInfoItem}>
+              <Ionicons name="time" size={20} color={colors.primary} />
+              <View style={styles.routeInfoTextContainer}>
+                <Text style={styles.routeInfoLabel}>Durée</Text>
+                <Text style={styles.routeInfoValue}>{routeInfo.duration.text}</Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.routeInfoPriceContainer}>
+            <View style={styles.routeInfoPriceRow}>
+              <Ionicons name="cash" size={24} color="#4CAF50" />
+              <View style={styles.routeInfoPriceTextContainer}>
+                <Text style={styles.routeInfoPriceLabel}>Prix estimé</Text>
+                <Text style={styles.routeInfoPriceValue}>
+                  {directionsService.formatPrice(routeInfo.estimatedPrice.total)}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          <TouchableOpacity style={styles.bookButton}>
+            <Text style={styles.bookButtonText}>Réserver une course</Text>
+            <Ionicons name="arrow-forward" size={20} color="#fff" />
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Bottom Sheet */}
       <View
@@ -744,5 +823,103 @@ const styles = StyleSheet.create({
   searchPlaceholder: {
     fontSize: 16,
     color: "#999",
+  },
+  // Route Info Card
+  routeInfoCard: {
+    position: "absolute",
+    bottom: 280,
+    left: 16,
+    right: 16,
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  routeInfoHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  routeInfoTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#1a1a1a",
+  },
+  routeInfoLoading: {
+    fontSize: 12,
+    color: colors.primary,
+    fontStyle: "italic",
+  },
+  routeInfoRow: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginBottom: 16,
+  },
+  routeInfoItem: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  routeInfoDivider: {
+    width: 1,
+    backgroundColor: "#e0e0e0",
+    marginHorizontal: 12,
+  },
+  routeInfoTextContainer: {
+    flex: 1,
+  },
+  routeInfoLabel: {
+    fontSize: 12,
+    color: "#666",
+    marginBottom: 2,
+  },
+  routeInfoValue: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#1a1a1a",
+  },
+  routeInfoPriceContainer: {
+    backgroundColor: "#f0f9ff",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+  },
+  routeInfoPriceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  routeInfoPriceTextContainer: {
+    flex: 1,
+  },
+  routeInfoPriceLabel: {
+    fontSize: 13,
+    color: "#666",
+    marginBottom: 2,
+  },
+  routeInfoPriceValue: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#4CAF50",
+  },
+  bookButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+    paddingVertical: 14,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 8,
+  },
+  bookButtonText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#fff",
   },
 });
