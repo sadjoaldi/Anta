@@ -37,6 +37,7 @@ export default function TripConfirmationScreen() {
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [loadingDrivers, setLoadingDrivers] = useState(false);
   const [showDrivers, setShowDrivers] = useState(false);
+  const [mapReady, setMapReady] = useState(false);
 
   const mapRef = useRef<MapView>(null);
 
@@ -106,21 +107,45 @@ export default function TripConfirmationScreen() {
 
   // Fit map to show route
   useEffect(() => {
-    if (routeInfo && mapRef.current) {
+    if (routeInfo && mapRef.current && mapReady) {
       const { northeast, southwest } = routeInfo.bounds;
 
-      mapRef.current.fitToCoordinates(
-        [
-          { latitude: northeast.lat, longitude: northeast.lng },
-          { latitude: southwest.lat, longitude: southwest.lng },
-        ],
-        {
-          edgePadding: { top: 100, right: 50, bottom: 400, left: 50 },
-          animated: true,
+      // Add a small delay to ensure map is ready
+      setTimeout(() => {
+        if (mapRef.current) {
+          mapRef.current.fitToCoordinates(
+            [
+              { latitude: northeast.lat, longitude: northeast.lng },
+              { latitude: southwest.lat, longitude: southwest.lng },
+            ],
+            {
+              edgePadding: { top: 100, right: 50, bottom: 400, left: 50 },
+              animated: true,
+            }
+          );
         }
-      );
+      }, 500);
     }
-  }, [routeInfo]);
+  }, [routeInfo, mapReady]);
+
+  // Force map update when polyline changes
+  useEffect(() => {
+    if (polylineCoordinates.length > 0 && mapRef.current && mapReady) {
+      // Force a subtle animation to trigger re-render
+      setTimeout(() => {
+        if (mapRef.current && routeInfo) {
+          const { northeast, southwest } = routeInfo.bounds;
+          mapRef.current.animateCamera({
+            center: {
+              latitude: (northeast.lat + southwest.lat) / 2,
+              longitude: (northeast.lng + southwest.lng) / 2,
+            },
+            zoom: 13,
+          }, { duration: 300 });
+        }
+      }, 100);
+    }
+  }, [polylineCoordinates.length, mapReady, routeInfo]);
 
   return (
     <View style={styles.container}>
@@ -138,39 +163,53 @@ export default function TripConfirmationScreen() {
         showsUserLocation
         showsMyLocationButton={false}
         loadingEnabled
+        loadingIndicatorColor={colors.primary}
+        loadingBackgroundColor="#fff"
+        onMapReady={() => setMapReady(true)}
+        mapType="standard"
+        pitchEnabled={false}
+        rotateEnabled={false}
+        scrollEnabled={true}
+        zoomEnabled={true}
       >
         {/* Origin Marker */}
-        <Marker
-          coordinate={{
-            latitude: origin.lat,
-            longitude: origin.lng,
-          }}
-          title="Votre position"
-          pinColor={colors.primary}
-        />
+        {isValidOrigin && (
+          <Marker
+            coordinate={{
+              latitude: origin.lat,
+              longitude: origin.lng,
+            }}
+            title="Votre position"
+            pinColor={colors.primary}
+          />
+        )}
 
         {/* Destination Marker */}
-        <Marker
-          coordinate={{
-            latitude: destination.lat,
-            longitude: destination.lng,
-          }}
-          title={destination.name}
-          pinColor={colors.danger}
-        >
-          <View style={styles.destinationMarker}>
-            <Ionicons name="location" size={24} color="#fff" />
-          </View>
-        </Marker>
+        {isValidDestination && (
+          <Marker
+            coordinate={{
+              latitude: destination.lat,
+              longitude: destination.lng,
+            }}
+            title={destination.name}
+            pinColor={colors.danger}
+          >
+            <View style={styles.destinationMarker}>
+              <Ionicons name="location" size={24} color="#fff" />
+            </View>
+          </Marker>
+        )}
 
         {/* Route Polyline */}
         {polylineCoordinates.length > 0 && (
           <Polyline
+            key={`polyline-${polylineCoordinates.length}`}
             coordinates={polylineCoordinates}
             strokeColor={colors.primary}
-            strokeWidth={4}
+            strokeWidth={5}
             lineCap="round"
             lineJoin="round"
+            zIndex={1}
           />
         )}
 
@@ -206,6 +245,7 @@ export default function TripConfirmationScreen() {
       >
         <Ionicons name="arrow-back" size={24} color="#1a1a1a" />
       </TouchableOpacity>
+
 
       {/* Route Info Card */}
       {routeLoading && (
@@ -318,7 +358,7 @@ export default function TripConfirmationScreen() {
                         {Number(driver.rating_avg || 0).toFixed(1)}
                       </Text>
                       <Text style={styles.driverTrips}>
-                        • {Number(driver.total_trips || 0)} courses
+                        {Number(driver.total_trips || 0)} courses
                       </Text>
                     </View>
                     <Text style={styles.driverVehicle}>

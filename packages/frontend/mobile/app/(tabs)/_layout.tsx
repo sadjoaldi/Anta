@@ -32,7 +32,6 @@ export default function TabsLayout() {
     >
       <Tabs.Screen name="index" options={{ href: null }} />
       <Tabs.Screen name="home" options={{ title: 'Accueil' }} />
-      <Tabs.Screen name="home.old" options={{ href: null }} />
       <Tabs.Screen name="search" options={{ href: null }} />
       <Tabs.Screen name="trajet" options={{ title: 'Trajets' }} />
       <Tabs.Screen name="messages" options={{ title: 'Messages' }} />

@@ -20,6 +20,7 @@ import {
 } from 'react-native';
 import AddressSearchModal from '../../src/components/AddressSearchModal';
 import FavoritePlaces from '../../src/components/FavoritePlaces';
+import PromotedPlaces, { PromotedPlace } from '../../src/components/PromotedPlaces';
 import RecentDestinations from '../../src/components/RecentDestinations';
 import SearchHomeInput from '../../src/components/SearchHomeInput';
 import { useAddressSearch } from '../../src/hooks/useAddressSearch';
@@ -41,6 +42,46 @@ export default function NewHomeScreen() {
   // Animation values
   const fadeAnim = useState(new Animated.Value(0))[0];
   const slideAnim = useState(new Animated.Value(50))[0];
+
+  // Mock promoted places (will be replaced by API call later)
+  const [promotedPlaces] = useState<PromotedPlace[]>([
+    {
+      id: '1',
+      name: 'Restaurant Le Damier',
+      category: '🍽️ Restaurant',
+      rating: 4.5,
+      distance: '2.3 km',
+      description: 'Cuisine locale et internationale',
+      image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400',
+    },
+    {
+      id: '2',
+      name: 'Marché Niger',
+      category: '🛒 Shopping',
+      rating: 4.2,
+      distance: '1.5 km',
+      description: 'Marché traditionnel avec produits locaux',
+      image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400',
+    },
+    {
+      id: '3',
+      name: 'Mosquée Fayçal',
+      category: '🕌 Monument',
+      rating: 4.8,
+      distance: '3.0 km',
+      description: 'Monument historique à visiter',
+      image: 'https://images.unsplash.com/photo-1564769625905-50e93615e769?w=400',
+    },
+    {
+      id: '4',
+      name: 'Plage de Rogbané',
+      category: '🏖️ Loisirs',
+      rating: 4.6,
+      distance: '5.2 km',
+      description: 'Belle plage pour se détendre',
+      image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400',
+    },
+  ]);
 
   // Address search hook
   const {
@@ -99,7 +140,6 @@ export default function NewHomeScreen() {
   useFocusEffect(
     useCallback(() => {
       loadRecentDestinations();
-      console.log('Home screen focused - reloading recent destinations');
     }, [])
   );
 
@@ -116,8 +156,6 @@ export default function NewHomeScreen() {
   // Handle place selection
   const handleSelectPlace = useCallback(
     async (place: PlaceSuggestion) => {
-      console.log('Selected place:', place.name);
-
       // If searching for origin
       if (searchingOrigin) {
         setCustomOrigin(place);
@@ -146,11 +184,35 @@ export default function NewHomeScreen() {
       setSearchingOrigin(false);
       clearSearch();
 
-      // Get origin (custom or current location)
-      const origin = customOrigin || {
-        latitude: location?.coords.latitude || 0,
-        longitude: location?.coords.longitude || 0,
-      };
+      // Get origin (custom or current location with Guinea bounds check)
+      const DEFAULT_CONAKRY_LAT = 9.6412;
+      const DEFAULT_CONAKRY_LNG = -13.5784;
+
+      let originLat: number;
+      let originLng: number;
+
+      if (customOrigin) {
+        originLat = customOrigin.latitude;
+        originLng = customOrigin.longitude;
+      } else if (location) {
+        // Check if in Guinea
+        const isInGuinea =
+          location.coords.latitude >= 7.0 &&
+          location.coords.latitude <= 12.7 &&
+          location.coords.longitude >= -15.1 &&
+          location.coords.longitude <= -7.6;
+
+        if (isInGuinea) {
+          originLat = location.coords.latitude;
+          originLng = location.coords.longitude;
+        } else {
+          originLat = DEFAULT_CONAKRY_LAT;
+          originLng = DEFAULT_CONAKRY_LNG;
+        }
+      } else {
+        originLat = DEFAULT_CONAKRY_LAT;
+        originLng = DEFAULT_CONAKRY_LNG;
+      }
 
       // Navigate to trip confirmation screen with place data
       router.push({
@@ -158,10 +220,10 @@ export default function NewHomeScreen() {
         params: {
           destinationName: place.name,
           destinationAddress: place.description,
-          destinationLat: place.latitude,
-          destinationLng: place.longitude,
-          originLat: customOrigin?.latitude || location?.coords.latitude || 0,
-          originLng: customOrigin?.longitude || location?.coords.longitude || 0,
+          destinationLat: String(place.latitude),
+          destinationLng: String(place.longitude),
+          originLat: String(originLat),
+          originLng: String(originLng),
         },
       });
     },
@@ -178,32 +240,103 @@ export default function NewHomeScreen() {
       return;
     }
 
+    // Get origin with Guinea bounds check
+    const DEFAULT_CONAKRY_LAT = 9.6412;
+    const DEFAULT_CONAKRY_LNG = -13.5784;
+
+    let originLat: number;
+    let originLng: number;
+
+    if (customOrigin) {
+      originLat = customOrigin.latitude;
+      originLng = customOrigin.longitude;
+    } else if (location) {
+      const isInGuinea =
+        location.coords.latitude >= 7.0 &&
+        location.coords.latitude <= 12.7 &&
+        location.coords.longitude >= -15.1 &&
+        location.coords.longitude <= -7.6;
+
+      if (isInGuinea) {
+        originLat = location.coords.latitude;
+        originLng = location.coords.longitude;
+      } else {
+        originLat = DEFAULT_CONAKRY_LAT;
+        originLng = DEFAULT_CONAKRY_LNG;
+      }
+    } else {
+      originLat = DEFAULT_CONAKRY_LAT;
+      originLng = DEFAULT_CONAKRY_LNG;
+    }
+
     // Navigate to trip confirmation screen
     router.push({
       pathname: '/trip-confirmation',
       params: {
         destinationName: favorite.name,
         destinationAddress: favorite.address || favorite.name,
-        destinationLat: favorite.latitude,
-        destinationLng: favorite.longitude,
-        originLat: customOrigin?.latitude || location?.coords.latitude || 0,
-        originLng: customOrigin?.longitude || location?.coords.longitude || 0,
+        destinationLat: String(favorite.latitude),
+        destinationLng: String(favorite.longitude),
+        originLat: String(originLat),
+        originLng: String(originLng),
       },
     });
   };
 
   // Handle recent destination selection
   const handleSelectRecent = (destination: RecentDestination) => {
+    // Validate coordinates
+    if (!destination.latitude || !destination.longitude) {
+      Alert.alert(
+        'Coordonnées invalides',
+        'Cette destination n\'a pas de coordonnées valides.'
+      );
+      return;
+    }
+
+    // Default origin: Conakry, Guinée (if no custom origin or if GPS is outside Guinea)
+    const DEFAULT_CONAKRY_LAT = 9.6412;
+    const DEFAULT_CONAKRY_LNG = -13.5784;
+
+    let originLat: number;
+    let originLng: number;
+
+    if (customOrigin) {
+      // Use custom origin if set
+      originLat = customOrigin.latitude;
+      originLng = customOrigin.longitude;
+    } else if (location) {
+      // Check if current GPS location is in Guinea (rough bounds check)
+      const isInGuinea =
+        location.coords.latitude >= 7.0 &&
+        location.coords.latitude <= 12.7 &&
+        location.coords.longitude >= -15.1 &&
+        location.coords.longitude <= -7.6;
+
+      if (isInGuinea) {
+        originLat = location.coords.latitude;
+        originLng = location.coords.longitude;
+      } else {
+        // User is outside Guinea, use default Conakry location
+        originLat = DEFAULT_CONAKRY_LAT;
+        originLng = DEFAULT_CONAKRY_LNG;
+      }
+    } else {
+      // No GPS available, use default
+      originLat = DEFAULT_CONAKRY_LAT;
+      originLng = DEFAULT_CONAKRY_LNG;
+    }
+
     // Navigate to trip confirmation screen
     router.push({
       pathname: '/trip-confirmation',
       params: {
         destinationName: destination.name,
         destinationAddress: destination.address,
-        destinationLat: destination.latitude,
-        destinationLng: destination.longitude,
-        originLat: customOrigin?.latitude || location?.coords.latitude || 0,
-        originLng: customOrigin?.longitude || location?.coords.longitude || 0,
+        destinationLat: String(destination.latitude),
+        destinationLng: String(destination.longitude),
+        originLat: String(originLat),
+        originLng: String(originLng),
       },
     });
   };
@@ -224,6 +357,27 @@ export default function NewHomeScreen() {
   const handleClearAllRecent = async () => {
     await placesService.clearRecentDestinations();
     loadRecentDestinations();
+  };
+
+  // Handle promoted place selection
+  const handleSelectPromoted = (place: PromotedPlace) => {
+    Alert.alert(
+      place.name,
+      `${place.category}\n\n${place.description || ''}\n\nVoulez-vous y aller ?`,
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Itinéraire',
+          onPress: () => {
+            // For now, show info. In production, this would navigate to the place
+            Alert.alert(
+              'Fonctionnalité à venir',
+              'L\'itinéraire vers les lieux promus sera disponible prochainement.'
+            );
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -309,6 +463,12 @@ export default function NewHomeScreen() {
           onSelectDestination={handleSelectRecent}
           onDeleteDestination={handleDeleteRecent}
           onClearAll={handleClearAllRecent}
+        />
+
+        {/* Promoted Places (Advertising) */}
+        <PromotedPlaces
+          places={promotedPlaces}
+          onSelectPlace={handleSelectPromoted}
         />
 
         {/* Empty state */}

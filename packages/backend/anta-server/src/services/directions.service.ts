@@ -210,6 +210,41 @@ class DirectionsService {
         ? `${Math.floor(durationMin / 60)} h ${Math.ceil(durationMin % 60)} min`
         : `${Math.ceil(durationMin)} min`;
 
+      // Calculate bounds from viewport if available, otherwise from legs
+      let bounds = {
+        northeast: { lat: 0, lng: 0 },
+        southwest: { lat: 0, lng: 0 },
+      };
+
+      if (route.viewport) {
+        // Routes API v2 has viewport
+        bounds = {
+          northeast: {
+            lat: route.viewport.high.latitude,
+            lng: route.viewport.high.longitude,
+          },
+          southwest: {
+            lat: route.viewport.low.latitude,
+            lng: route.viewport.low.longitude,
+          },
+        };
+      } else if (route.legs && route.legs.length > 0) {
+        // Calculate from legs
+        const firstLeg = route.legs[0];
+        const lastLeg = route.legs[route.legs.length - 1];
+        
+        bounds = {
+          northeast: {
+            lat: Math.max(firstLeg.startLocation.latLng.latitude, lastLeg.endLocation.latLng.latitude),
+            lng: Math.max(firstLeg.startLocation.latLng.longitude, lastLeg.endLocation.latLng.longitude),
+          },
+          southwest: {
+            lat: Math.min(firstLeg.startLocation.latLng.latitude, lastLeg.endLocation.latLng.latitude),
+            lng: Math.min(firstLeg.startLocation.latLng.longitude, lastLeg.endLocation.latLng.longitude),
+          },
+        };
+      }
+
       const routeInfo: RouteInfo = {
         distance: {
           text: distanceText,
@@ -222,10 +257,7 @@ class DirectionsService {
           minutes: Math.ceil(durationMin),
         },
         polyline: route.polyline.encodedPolyline,
-        bounds: {
-          northeast: { lat: 0, lng: 0 }, // Routes API v2 doesn't return bounds
-          southwest: { lat: 0, lng: 0 },
-        },
+        bounds,
         estimatedPrice: {
           base: this.PRICING.baseFare,
           perKm: this.PRICING.perKm,
