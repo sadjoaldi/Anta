@@ -1,54 +1,46 @@
-import { Ionicons } from "@expo/vector-icons";
-import * as Location from "expo-location";
-import React, { useEffect, useRef, useState } from "react";
+/**
+ * New Home Screen (Refactored UX)
+ * Simple search-first interface without map clutter
+ */
+
+import { Ionicons } from '@expo/vector-icons';
+import { router, useFocusEffect } from 'expo-router';
+import * as Location from 'expo-location';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
-  Dimensions,
-  Platform,
+  Animated,
+  Image,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
-} from "react-native";
-import MapView, { Callout, Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
-import AddressSearchModal from "../../src/components/AddressSearchModal";
-import { useAddressSearch } from "../../src/hooks/useAddressSearch";
-import { useRouteCalculation } from "../../src/hooks/useRouteCalculation";
-import driverService, { Driver } from "../../src/services/driver.service";
-import { PlaceSuggestion } from "../../src/services/geocoding.service";
-import directionsService from "../../src/services/directions.service";
-import colors from "../../src/theme/colors";
+} from 'react-native';
+import AddressSearchModal from '../../src/components/AddressSearchModal';
+import FavoritePlaces from '../../src/components/FavoritePlaces';
+import RecentDestinations from '../../src/components/RecentDestinations';
+import SearchHomeInput from '../../src/components/SearchHomeInput';
+import { useAddressSearch } from '../../src/hooks/useAddressSearch';
+import { PlaceSuggestion } from '../../src/services/geocoding.service';
+import placesService from '../../src/services/places.service';
+import colors from '../../src/theme/colors';
+import { FavoritePlace, RecentDestination } from '../../src/types/places.types';
 
-const { height } = Dimensions.get("window");
-
-interface SavedPlace {
-  id: string;
-  name: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  address?: string;
-  latitude?: number;
-  longitude?: number;
-}
-
-interface RecentDestination {
-  id: string;
-  address: string;
-  timestamp: Date;
-}
-
-export default function HomeScreen() {
-  const [location, setLocation] = useState<Location.LocationObject | null>(
-    null
-  );
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [bottomSheetExpanded, setBottomSheetExpanded] = useState(false);
-  const [drivers, setDrivers] = useState<Driver[]>([]);
-  const [loadingDrivers, setLoadingDrivers] = useState(false);
+export default function NewHomeScreen() {
+  const [location, setLocation] = useState<Location.LocationObject | null>(null);
+  const [favorites, setFavorites] = useState<FavoritePlace[]>([]);
+  const [recentDestinations, setRecentDestinations] = useState<RecentDestination[]>([]);
   const [searchModalVisible, setSearchModalVisible] = useState(false);
-  const [destination, setDestination] = useState<PlaceSuggestion | null>(null);
-
-  const mapRef = useRef<MapView>(null);
+  const [searchingOrigin, setSearchingOrigin] = useState(false); // true = origin, false = destination
+  const [editingFavorite, setEditingFavorite] = useState<FavoritePlace | null>(null);
+  const [customOrigin, setCustomOrigin] = useState<PlaceSuggestion | null>(null);
+  const [selectedDestination, setSelectedDestination] = useState<PlaceSuggestion | null>(null);
+  
+  // Animation values
+  const fadeAnim = useState(new Animated.Value(0))[0];
+  const slideAnim = useState(new Animated.Value(50))[0];
 
   // Address search hook
   const {
@@ -66,499 +58,302 @@ export default function HomeScreen() {
       : undefined,
   });
 
-  // Route calculation hook
-  const {
-    routeInfo,
-    polylineCoordinates,
-    loading: routeLoading,
-    error: routeError,
-    calculateRoute,
-    clearRoute,
-  } = useRouteCalculation();
-
-  // Dummy data - À remplacer par de vraies données du backend
-  const [savedPlaces] = useState<SavedPlace[]>([
-    { id: "1", name: "Maison", icon: "home" },
-    { id: "2", name: "Travail", icon: "briefcase" },
-  ]);
-
-  const [recentDestinations] = useState<RecentDestination[]>([
-    { id: "1", address: "Kaloum Market, Conakry", timestamp: new Date() },
-    { id: "2", address: "Ratoma Center", timestamp: new Date() },
-    { id: "3", address: "Matam Avenue", timestamp: new Date() },
-  ]);
-
-  // Load available drivers
-  const loadNearbyDrivers = async (latitude: number, longitude: number) => {
-    try {
-      setLoadingDrivers(true);
-      const response = await driverService.getAvailableDrivers(
-        latitude,
-        longitude,
-        5000
-      );
-      setDrivers(response.drivers);
-    } catch (error) {
-      console.error("❌ Error loading drivers:", error);
-    } finally {
-      setLoadingDrivers(false);
-    }
-  };
-
+  // Request location permission
   useEffect(() => {
     (async () => {
-      // Request location permissions
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        setErrorMsg("Permission refusée");
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
         Alert.alert(
-          "Permission requise",
-          "ANTA a besoin d'accéder à votre position pour fonctionner"
+          'Permission refusée',
+          'ANTA a besoin d\'accéder à votre position pour fonctionner.'
         );
         return;
       }
 
-      // Get current location
-      try {
-        // 🔧 DEV MODE: Force location to Conakry for testing
-        const DEV_MODE = true; // Set to false to use real GPS
-
-        let location;
-        if (DEV_MODE) {
-          // Simulate location in Conakry, Guinea (slightly offset from driver position)
-          location = {
-            coords: {
-              latitude: 9.645, // Décalé de ~400m au nord
-              longitude: -13.582, // Décalé de ~300m à l'ouest
-              altitude: 0,
-              accuracy: 100,
-              altitudeAccuracy: 0,
-              heading: 0,
-              speed: 0,
-            },
-            timestamp: Date.now(),
-          } as Location.LocationObject;
-        } else {
-          location = await Location.getCurrentPositionAsync({
-            accuracy: Location.Accuracy.High,
-          });
-        }
-
-        setLocation(location);
-
-        // Load nearby drivers
-        await loadNearbyDrivers(
-          location.coords.latitude,
-          location.coords.longitude
-        );
-      } catch (error) {
-        console.error("Error getting location:", error);
-        setErrorMsg("Impossible de récupérer votre position");
-      }
+      const loc = await Location.getCurrentPositionAsync({});
+      setLocation(loc);
     })();
   }, []);
 
-  // Refresh drivers every 10 seconds
+  // Load favorites and recent destinations on mount
   useEffect(() => {
-    if (!location) return;
+    loadFavorites();
+    loadRecentDestinations();
+    
+    // Start animations
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
 
-    const interval = setInterval(() => {
-      loadNearbyDrivers(location.coords.latitude, location.coords.longitude);
-    }, 10000); // 10 seconds
+  // Reload data when screen comes into focus (after navigation back)
+  useFocusEffect(
+    useCallback(() => {
+      loadRecentDestinations();
+      console.log('Home screen focused - reloading recent destinations');
+    }, [])
+  );
 
-    return () => clearInterval(interval);
-  }, [location]);
+  const loadFavorites = async () => {
+    const favs = await placesService.getFavorites();
+    setFavorites(favs);
+  };
 
-  const handleCenterOnUser = () => {
-    if (location && mapRef.current) {
-      mapRef.current.animateToRegion({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
+  const loadRecentDestinations = async () => {
+    const recent = await placesService.getRecentDestinations();
+    setRecentDestinations(recent);
+  };
+
+  // Handle place selection
+  const handleSelectPlace = useCallback(
+    async (place: PlaceSuggestion) => {
+      console.log('Selected place:', place.name);
+
+      // If searching for origin
+      if (searchingOrigin) {
+        setCustomOrigin(place);
+        setSearchModalVisible(false);
+        setSearchingOrigin(false);
+        clearSearch();
+        return;
+      }
+
+      // If searching for destination
+      setSelectedDestination(place);
+
+      // Add to recent destinations
+      await placesService.addRecentDestination({
+        name: place.name,
+        address: place.description,
+        latitude: place.latitude,
+        longitude: place.longitude,
       });
+
+      // Reload recent destinations to show the new one
+      await loadRecentDestinations();
+
+      // Close modal
+      setSearchModalVisible(false);
+      setSearchingOrigin(false);
+      clearSearch();
+
+      // Get origin (custom or current location)
+      const origin = customOrigin || {
+        latitude: location?.coords.latitude || 0,
+        longitude: location?.coords.longitude || 0,
+      };
+
+      // Navigate to trip confirmation screen with place data
+      router.push({
+        pathname: '/trip-confirmation',
+        params: {
+          destinationName: place.name,
+          destinationAddress: place.description,
+          destinationLat: place.latitude,
+          destinationLng: place.longitude,
+          originLat: customOrigin?.latitude || location?.coords.latitude || 0,
+          originLng: customOrigin?.longitude || location?.coords.longitude || 0,
+        },
+      });
+    },
+    [location, clearSearch, searchingOrigin, customOrigin]
+  );
+
+  // Handle favorite selection
+  const handleSelectFavorite = (favorite: FavoritePlace) => {
+    if (!favorite.latitude || !favorite.longitude) {
+      Alert.alert(
+        'Favori non configuré',
+        'Veuillez d\'abord configurer cette destination favorite.'
+      );
+      return;
     }
+
+    // Navigate to trip confirmation screen
+    router.push({
+      pathname: '/trip-confirmation',
+      params: {
+        destinationName: favorite.name,
+        destinationAddress: favorite.address || favorite.name,
+        destinationLat: favorite.latitude,
+        destinationLng: favorite.longitude,
+        originLat: customOrigin?.latitude || location?.coords.latitude || 0,
+        originLng: customOrigin?.longitude || location?.coords.longitude || 0,
+      },
+    });
   };
 
-  const handleSavedPlaceSelect = (place: SavedPlace) => {
-    // TODO: Navigate to booking flow with saved place
-    Alert.alert("Lieu sélectionné", `Vous avez choisi: ${place.name}`);
+  // Handle recent destination selection
+  const handleSelectRecent = (destination: RecentDestination) => {
+    // Navigate to trip confirmation screen
+    router.push({
+      pathname: '/trip-confirmation',
+      params: {
+        destinationName: destination.name,
+        destinationAddress: destination.address,
+        destinationLat: destination.latitude,
+        destinationLng: destination.longitude,
+        originLat: customOrigin?.latitude || location?.coords.latitude || 0,
+        originLng: customOrigin?.longitude || location?.coords.longitude || 0,
+      },
+    });
   };
 
-  const handleRecentSelect = (recentDest: RecentDestination) => {
-    // TODO: Navigate to booking flow with destination
-    Alert.alert("Destination sélectionnée", recentDest.address);
-  };
-
-  const handleSearchPress = () => {
+  // Handle edit favorite
+  const handleEditFavorite = (favorite: FavoritePlace) => {
+    setEditingFavorite(favorite);
     setSearchModalVisible(true);
   };
 
-  const handleSelectPlace = async (place: PlaceSuggestion) => {
-    setDestination(place);
-    clearSearch();
-    setSearchModalVisible(false);
-
-    console.log("Selected place:", place.name, `(${place.latitude}, ${place.longitude})`);
-
-    // Calculate route if user location is available
-    if (location) {
-      const origin = {
-        lat: location.coords.latitude,
-        lng: location.coords.longitude,
-      };
-      const destination = {
-        lat: place.latitude,
-        lng: place.longitude,
-      };
-
-      await calculateRoute(origin, destination);
-    }
-
-    // Animate map to show both user location and destination
-    if (location && mapRef.current) {
-      const userLat = location.coords.latitude;
-      const userLng = location.coords.longitude;
-      const destLat = place.latitude;
-      const destLng = place.longitude;
-
-      // Calculate center point and deltas to show both locations
-      const centerLat = (userLat + destLat) / 2;
-      const centerLng = (userLng + destLng) / 2;
-      
-      const latDelta = Math.abs(userLat - destLat) * 2.5 + 0.02;
-      const lngDelta = Math.abs(userLng - destLng) * 2.5 + 0.02;
-
-      const region = {
-        latitude: centerLat,
-        longitude: centerLng,
-        latitudeDelta: Math.max(latDelta, 0.05),
-        longitudeDelta: Math.max(lngDelta, 0.05),
-      };
-
-      console.log("Animating to region:", region);
-      mapRef.current.animateToRegion(region, 1000);
-    } else if (mapRef.current) {
-      // If no user location, just focus on destination
-      mapRef.current.animateToRegion({
-        latitude: place.latitude,
-        longitude: place.longitude,
-        latitudeDelta: 0.05,
-        longitudeDelta: 0.05,
-      }, 1000);
-    }
+  // Handle delete recent
+  const handleDeleteRecent = async (id: string) => {
+    await placesService.removeRecentDestination(id);
+    loadRecentDestinations();
   };
 
-  const handleClearDestination = () => {
-    setDestination(null);
-    clearRoute();
-    if (location && mapRef.current) {
-      mapRef.current.animateToRegion({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-      });
-    }
-  };
-
-  // Default region (Conakry, Guinea) if no location yet
-  const initialRegion = {
-    latitude: location?.coords.latitude || 9.6412,
-    longitude: location?.coords.longitude || -13.5784,
-    latitudeDelta: 0.0922,
-    longitudeDelta: 0.0421,
+  // Handle clear all recent
+  const handleClearAllRecent = async () => {
+    await placesService.clearRecentDestinations();
+    loadRecentDestinations();
   };
 
   return (
     <View style={styles.container}>
-      {/* Map */}
-      <MapView
-        ref={mapRef}
-        style={styles.map}
-        provider={PROVIDER_GOOGLE}
-        initialRegion={initialRegion}
-        showsUserLocation
-        showsMyLocationButton={false}
-        loadingEnabled
-      >
-        {/* User location marker */}
-        {location && (
-          <Marker
-            coordinate={{
-              latitude: location.coords.latitude,
-              longitude: location.coords.longitude,
-            }}
-            title="Votre position"
-            pinColor={colors.primary}
-          />
-        )}
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
-        {/* Driver markers */}
-        {drivers.map((driver) => {
-          if (!driver.current_latitude || !driver.current_longitude)
-            return null;
-
-          return (
-            <Marker
-              key={driver.id}
-              coordinate={{
-                latitude: driver.current_latitude,
-                longitude: driver.current_longitude,
-              }}
-              pinColor="#4CAF50"
-            >
-              <View style={styles.driverMarker}>
-                <Ionicons
-                  name={driver.vehicle_type === "Moto" ? "bicycle" : "car"}
-                  size={20}
-                  color="#fff"
-                />
-              </View>
-              <Callout style={styles.callout}>
-                <View style={styles.calloutContent}>
-                  <Text style={styles.calloutName}>
-                    {driver.user?.name || "Chauffeur"}
-                  </Text>
-                  <View style={styles.calloutInfo}>
-                    <Ionicons name="star" size={14} color="#FFC107" />
-                    <Text style={styles.calloutRating}>
-                      {Number(driver.rating_avg || 0).toFixed(1)}
-                    </Text>
-                    <Text style={styles.calloutTrips}>
-                      ({Number(driver.total_trips || 0)} courses)
-                    </Text>
-                  </View>
-                  {driver.distance && (
-                    <Text style={styles.calloutDistance}>
-                      À {(driver.distance / 1000).toFixed(1)} km
-                    </Text>
-                  )}
-                  {driver.vehicle_type && (
-                    <Text style={styles.calloutVehicle}>
-                      {driver.vehicle_brand || "N/A"}{" "}
-                      {driver.vehicle_model || ""}{" "}
-                      {driver.vehicle_color ? `(${driver.vehicle_color})` : ""}
-                    </Text>
-                  )}
-                </View>
-              </Callout>
-            </Marker>
-          );
-        })}
-
-        {/* Destination marker */}
-        {destination && (
-          <Marker
-            coordinate={{
-              latitude: destination.latitude,
-              longitude: destination.longitude,
-            }}
-            pinColor={colors.danger}
-          >
-            <View style={styles.destinationMarker}>
-              <Ionicons name="location" size={24} color="#fff" />
-            </View>
-            <Callout>
-              <View style={styles.calloutContent}>
-                <Text style={styles.calloutName}>{destination.name}</Text>
-                <Text style={styles.calloutVehicle}>
-                  {destination.description}
-                </Text>
-              </View>
-            </Callout>
-          </Marker>
-        )}
-
-        {/* Route polyline */}
-        {polylineCoordinates.length > 0 && (
-          <Polyline
-            coordinates={polylineCoordinates}
-            strokeColor={colors.primary}
-            strokeWidth={4}
-            lineCap="round"
-            lineJoin="round"
-          />
-        )}
-      </MapView>
-
-      {/* Center on user button */}
-      <TouchableOpacity
-        style={styles.centerButton}
-        onPress={handleCenterOnUser}
-      >
-        <Ionicons name="locate" size={24} color={colors.primary} />
-      </TouchableOpacity>
-
-      {/* Route Info Card */}
-      {routeInfo && (
-        <View style={styles.routeInfoCard}>
-          <View style={styles.routeInfoHeader}>
-            <Text style={styles.routeInfoTitle}>Détails du trajet</Text>
-            {routeLoading && <Text style={styles.routeInfoLoading}>Calcul...</Text>}
-          </View>
-          
-          <View style={styles.routeInfoRow}>
-            <View style={styles.routeInfoItem}>
-              <Ionicons name="navigate" size={20} color={colors.primary} />
-              <View style={styles.routeInfoTextContainer}>
-                <Text style={styles.routeInfoLabel}>Distance</Text>
-                <Text style={styles.routeInfoValue}>{routeInfo.distance.text}</Text>
-              </View>
-            </View>
-
-            <View style={styles.routeInfoDivider} />
-
-            <View style={styles.routeInfoItem}>
-              <Ionicons name="time" size={20} color={colors.primary} />
-              <View style={styles.routeInfoTextContainer}>
-                <Text style={styles.routeInfoLabel}>Durée</Text>
-                <Text style={styles.routeInfoValue}>{routeInfo.duration.text}</Text>
-              </View>
-            </View>
-          </View>
-
-          <View style={styles.routeInfoPriceContainer}>
-            <View style={styles.routeInfoPriceRow}>
-              <Ionicons name="cash" size={24} color="#4CAF50" />
-              <View style={styles.routeInfoPriceTextContainer}>
-                <Text style={styles.routeInfoPriceLabel}>Prix estimé</Text>
-                <Text style={styles.routeInfoPriceValue}>
-                  {directionsService.formatPrice(routeInfo.estimatedPrice.total)}
-                </Text>
-              </View>
-            </View>
-          </View>
-
-          <TouchableOpacity style={styles.bookButton}>
-            <Text style={styles.bookButtonText}>Réserver une course</Text>
-            <Ionicons name="arrow-forward" size={20} color="#fff" />
-          </TouchableOpacity>
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.logoContainer}>
+          <Text style={styles.logo}>🚗 ANTA</Text>
         </View>
-      )}
-
-      {/* Bottom Sheet */}
-      <View
-        style={[
-          styles.bottomSheet,
-          bottomSheetExpanded && styles.bottomSheetExpanded,
-        ]}
-      >
-        {/* Handle */}
-        <TouchableOpacity
-          style={styles.handle}
-          onPress={() => setBottomSheetExpanded(!bottomSheetExpanded)}
-        >
-          <View style={styles.handleBar} />
-        </TouchableOpacity>
-
-        <ScrollView
-          style={styles.bottomSheetContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Drivers Count Badge */}
-          {drivers.length > 0 && (
-            <View style={styles.driversBadge}>
-              <Ionicons name="car" size={16} color="#4CAF50" />
-              <Text style={styles.driversBadgeText}>
-                {drivers.length} chauffeur{drivers.length > 1 ? "s" : ""}{" "}
-                disponible{drivers.length > 1 ? "s" : ""}
-              </Text>
-            </View>
-          )}
-
-          {/* Search Input / Destination Display */}
-          <View style={styles.searchContainer}>
-            {destination ? (
-              <View style={styles.destinationDisplay}>
-                <View style={styles.destinationIconContainer}>
-                  <Ionicons name="location" size={20} color={colors.primary} />
-                </View>
-                <View style={styles.destinationTextContainer}>
-                  <Text style={styles.destinationName}>{destination.name}</Text>
-                  <Text style={styles.destinationDescription} numberOfLines={1}>
-                    {destination.description}
-                  </Text>
-                </View>
-                <TouchableOpacity onPress={handleClearDestination}>
-                  <Ionicons name="close-circle" size={24} color="#999" />
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <TouchableOpacity
-                style={styles.searchInputWrapper}
-                onPress={handleSearchPress}
-                activeOpacity={0.7}
-              >
-                <Ionicons
-                  name="search"
-                  size={20}
-                  color="#999"
-                  style={styles.searchIcon}
-                />
-                <Text style={styles.searchPlaceholder}>Où allez-vous ?</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-
-          {/* Quick Access - Saved Places */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>📍 RACCOURCIS</Text>
-            <View style={styles.savedPlacesContainer}>
-              {savedPlaces.map((place) => (
-                <TouchableOpacity
-                  key={place.id}
-                  style={styles.savedPlaceButton}
-                  onPress={() => handleSavedPlaceSelect(place)}
-                >
-                  <Ionicons
-                    name={place.icon}
-                    size={20}
-                    color={colors.primary}
-                  />
-                  <Text style={styles.savedPlaceText}>{place.name}</Text>
-                </TouchableOpacity>
-              ))}
-              <TouchableOpacity style={styles.savedPlaceButton}>
-                <Ionicons name="add-circle-outline" size={20} color="#999" />
-                <Text style={styles.savedPlaceTextAdd}>Ajouter</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Recent Destinations */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>🕐 RÉCENTS</Text>
-            {recentDestinations.map((destination) => (
-              <TouchableOpacity
-                key={destination.id}
-                style={styles.recentItem}
-                onPress={() => handleRecentSelect(destination)}
-              >
-                <View style={styles.recentIconContainer}>
-                  <Ionicons name="time-outline" size={20} color="#666" />
-                </View>
-                <View style={styles.recentTextContainer}>
-                  <Text style={styles.recentAddress}>
-                    {destination.address}
-                  </Text>
-                </View>
-                <Ionicons name="chevron-forward" size={20} color="#ccc" />
-              </TouchableOpacity>
-            ))}
-          </View>
-        </ScrollView>
+        <Text style={styles.greeting}>
+          Bonjour, où souhaitez-vous aller ?
+        </Text>
       </View>
 
-      {/* Address Search Modal */}
+      <Animated.ScrollView
+        style={[styles.content, { opacity: fadeAnim }]}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        <Animated.View style={[styles.inputGroup, { transform: [{ translateY: slideAnim }] }]}>
+          <Text style={styles.inputLabel}>📍 D'où partez-vous ?</Text>
+          <SearchHomeInput
+            onPress={() => {
+              setSearchingOrigin(true);
+              setSearchModalVisible(true);
+            }}
+            placeholder={
+              customOrigin
+                ? customOrigin.name
+                : '📍 Ma position actuelle'
+            }
+          />
+          {customOrigin && (
+            <TouchableOpacity
+              style={styles.clearOriginButton}
+              onPress={() => setCustomOrigin(null)}
+            >
+              <Text style={styles.clearOriginText}>
+                ✕ Utiliser ma position actuelle
+              </Text>
+            </TouchableOpacity>
+          )}
+        </Animated.View>
+
+        {/* Destination Input */}
+        <Animated.View style={[styles.inputGroup, { transform: [{ translateY: slideAnim }] }]}>
+          <Text style={styles.inputLabel}>🔍 Où allez-vous ?</Text>
+          <SearchHomeInput
+            onPress={() => {
+              setSearchingOrigin(false);
+              setSearchModalVisible(true);
+            }}
+            placeholder={
+              selectedDestination
+                ? selectedDestination.name
+                : 'Destination'
+            }
+          />
+          {selectedDestination && (
+            <TouchableOpacity
+              style={styles.clearOriginButton}
+              onPress={() => setSelectedDestination(null)}
+            >
+              <Text style={styles.clearOriginText}>
+                ✕ Effacer la destination
+              </Text>
+            </TouchableOpacity>
+          )}
+        </Animated.View>
+
+        {/* Favorite Places */}
+        <FavoritePlaces
+          favorites={favorites}
+          onSelectFavorite={handleSelectFavorite}
+          onEditFavorite={handleEditFavorite}
+        />
+
+        {/* Recent Destinations */}
+        <RecentDestinations
+          destinations={recentDestinations}
+          onSelectDestination={handleSelectRecent}
+          onDeleteDestination={handleDeleteRecent}
+          onClearAll={handleClearAllRecent}
+        />
+
+        {/* Empty state */}
+        {recentDestinations.length === 0 && (
+          <View style={styles.emptyState}>
+            <Ionicons name="map-outline" size={64} color="#ccc" />
+            <Text style={styles.emptyText}>
+              Recherchez une destination pour commencer
+            </Text>
+          </View>
+        )}
+      </Animated.ScrollView>
+
+      {/* Search Modal */}
       <AddressSearchModal
         visible={searchModalVisible}
-        onClose={() => setSearchModalVisible(false)}
-        onSelectPlace={handleSelectPlace}
+        onClose={() => {
+          setSearchModalVisible(false);
+          setSearchingOrigin(false);
+          setEditingFavorite(null);
+          clearSearch();
+        }}
         query={query}
         onQueryChange={handleQueryChange}
         suggestions={suggestions}
         loading={searchLoading}
+        onSelectPlace={async (place) => {
+          if (editingFavorite) {
+            // Save as favorite
+            await placesService.saveFavorite({
+              id: editingFavorite.id,
+              name: editingFavorite.name,
+              icon: editingFavorite.icon,
+              address: place.description,
+              latitude: place.latitude,
+              longitude: place.longitude,
+            });
+            setEditingFavorite(null);
+            setSearchModalVisible(false);
+            clearSearch();
+            loadFavorites();
+          } else {
+            handleSelectPlace(place);
+          }
+        }}
       />
     </View>
   );
@@ -567,359 +362,61 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: '#f8f9fa',
   },
-  map: {
-    flex: 1,
-  },
-  centerButton: {
-    position: "absolute",
-    top: Platform.OS === "ios" ? 60 : 40,
-    right: 20,
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: "#fff",
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  bottomSheet: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    height: height * 0.4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 10,
-  },
-  bottomSheetExpanded: {
-    height: height * 0.7,
-  },
-  handle: {
-    alignItems: "center",
-    paddingVertical: 12,
-  },
-  handleBar: {
-    width: 40,
-    height: 4,
-    backgroundColor: "#ddd",
-    borderRadius: 2,
-  },
-  bottomSheetContent: {
-    flex: 1,
+  header: {
+    backgroundColor: '#fff',
+    paddingTop: 60,
+    paddingBottom: 20,
     paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
   },
-  driversBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "flex-start",
-    gap: 6,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    backgroundColor: "#E8F5E9",
-    borderRadius: 20,
-    marginBottom: 16,
+  logoContainer: {
+    marginBottom: 8,
   },
-  driversBadgeText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#4CAF50",
+  logo: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: colors.primary,
   },
-  searchContainer: {
+  greeting: {
+    fontSize: 16,
+    color: '#666',
+  },
+  content: {
+    flex: 1,
+  },
+  contentContainer: {
+    padding: 20,
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+  },
+  emptyText: {
+    fontSize: 15,
+    color: '#999',
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  inputGroup: {
     marginBottom: 20,
   },
-  searchInputWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#f5f5f5",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    height: 50,
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
-  },
-  searchIcon: {
-    marginRight: 10,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: "#1a1a1a",
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#666",
-    marginBottom: 12,
-    letterSpacing: 0.5,
-  },
-  savedPlacesContainer: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  savedPlaceButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    backgroundColor: "#f0f9ff",
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.primary + "30",
-  },
-  savedPlaceText: {
+  inputLabel: {
     fontSize: 14,
-    fontWeight: "600",
-    color: colors.primary,
+    fontWeight: '600',
+    color: '#1a1a1a',
+    marginBottom: 8,
   },
-  savedPlaceTextAdd: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#999",
+  clearOriginButton: {
+    marginTop: 8,
+    alignSelf: 'flex-start',
   },
-  recentItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
-  },
-  recentIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#f5f5f5",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  recentTextContainer: {
-    flex: 1,
-  },
-  recentAddress: {
-    fontSize: 15,
-    color: "#1a1a1a",
-    fontWeight: "500",
-  },
-  // Driver marker styles
-  driverMarker: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#4CAF50",
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 3,
-    borderColor: "#fff",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  // Callout styles
-  callout: {
-    minWidth: 200,
-  },
-  calloutContent: {
-    padding: 10,
-  },
-  calloutName: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#1a1a1a",
-    marginBottom: 4,
-  },
-  calloutInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 4,
-    gap: 4,
-  },
-  calloutRating: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#1a1a1a",
-  },
-  calloutTrips: {
-    fontSize: 12,
-    color: "#666",
-  },
-  calloutDistance: {
+  clearOriginText: {
     fontSize: 13,
     color: colors.primary,
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-  calloutVehicle: {
-    fontSize: 12,
-    color: "#666",
-  },
-  // Destination marker styles
-  destinationMarker: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.danger,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 3,
-    borderColor: "#fff",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  // Destination display styles
-  destinationDisplay: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#f0f9ff",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: colors.primary + "30",
-  },
-  destinationIconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.primary + "20",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  destinationTextContainer: {
-    flex: 1,
-  },
-  destinationName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1a1a1a",
-    marginBottom: 2,
-  },
-  destinationDescription: {
-    fontSize: 13,
-    color: "#666",
-  },
-  // Search placeholder
-  searchPlaceholder: {
-    fontSize: 16,
-    color: "#999",
-  },
-  // Route Info Card
-  routeInfoCard: {
-    position: "absolute",
-    bottom: 280,
-    left: 16,
-    right: 16,
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  routeInfoHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  routeInfoTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#1a1a1a",
-  },
-  routeInfoLoading: {
-    fontSize: 12,
-    color: colors.primary,
-    fontStyle: "italic",
-  },
-  routeInfoRow: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    marginBottom: 16,
-  },
-  routeInfoItem: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  routeInfoDivider: {
-    width: 1,
-    backgroundColor: "#e0e0e0",
-    marginHorizontal: 12,
-  },
-  routeInfoTextContainer: {
-    flex: 1,
-  },
-  routeInfoLabel: {
-    fontSize: 12,
-    color: "#666",
-    marginBottom: 2,
-  },
-  routeInfoValue: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#1a1a1a",
-  },
-  routeInfoPriceContainer: {
-    backgroundColor: "#f0f9ff",
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 16,
-  },
-  routeInfoPriceRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  routeInfoPriceTextContainer: {
-    flex: 1,
-  },
-  routeInfoPriceLabel: {
-    fontSize: 13,
-    color: "#666",
-    marginBottom: 2,
-  },
-  routeInfoPriceValue: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#4CAF50",
-  },
-  bookButton: {
-    backgroundColor: colors.primary,
-    borderRadius: 12,
-    paddingVertical: 14,
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 8,
-  },
-  bookButtonText: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#fff",
+    fontWeight: '500',
   },
 });
