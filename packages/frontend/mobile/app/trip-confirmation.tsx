@@ -43,9 +43,10 @@ export default function TripConfirmationScreen() {
 
   // Parse params with useMemo to prevent recreating objects
   const origin = useMemo(() => ({
-    lat: parseFloat(params.originLat) || 0,
-    lng: parseFloat(params.originLng) || 0,
-  }), [params.originLat, params.originLng]);
+    lat: parseFloat(params.originLat as string) || 0,
+    lng: parseFloat(params.originLng as string) || 0,
+    name: (params.originName as string) || 'Position actuelle',
+  }), [params.originLat, params.originLng, params.originName]);
 
   const destination = useMemo(() => ({
     name: params.destinationName || '',
@@ -146,6 +147,30 @@ export default function TripConfirmationScreen() {
       }, 100);
     }
   }, [polylineCoordinates.length, mapReady, routeInfo]);
+
+  // Handle driver selection
+  const handleSelectDriver = (driver: any) => {
+    router.push({
+      pathname: '/booking-confirmation',
+      params: {
+        driverId: driver.id,
+        driverName: driver.user?.name || 'Chauffeur',
+        driverRating: Number(driver.rating_avg || 0).toFixed(1),
+        driverVehicle: `${driver.vehicle_brand} ${driver.vehicle_model}`,
+        driverDistance: driver.distance ? `${(driver.distance / 1000).toFixed(1)} km` : '',
+        originName: origin.name || 'Position actuelle',
+        originLat: String(origin.lat),
+        originLng: String(origin.lng),
+        destinationName: destination.name,
+        destinationAddress: destination.address,
+        destinationLat: String(destination.lat),
+        destinationLng: String(destination.lng),
+        distance: routeInfo?.distance.text || '',
+        duration: routeInfo?.duration.text || '',
+        price: routeInfo?.estimatedPrice.total || 0,
+      },
+    });
+  };
 
   return (
     <View style={styles.container}>
@@ -373,7 +398,11 @@ export default function TripConfirmationScreen() {
                         {(driver.distance / 1000).toFixed(1)} km
                       </Text>
                     )}
-                    <TouchableOpacity style={styles.selectButton}>
+                    <TouchableOpacity
+                      style={styles.selectButton}
+                      onPress={() => handleSelectDriver(driver)}
+                      activeOpacity={0.7}
+                    >
                       <Text style={styles.selectButtonText}>Choisir</Text>
                     </TouchableOpacity>
                   </View>

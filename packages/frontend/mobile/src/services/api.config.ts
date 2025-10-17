@@ -3,12 +3,10 @@
  */
 
 // API Base URL - configurable via environment variable
-// 🔧 Change this based on your setup:
-// - Android Emulator: http://10.0.2.2:4000/api
-// - iOS Simulator: http://localhost:4000/api
-// - Physical Device: http://YOUR_LOCAL_IP:4000/api (find with ipconfig/ifconfig)
+// Physical device: use your computer's local IP address
+// Find it with: ipconfig (Windows) or ifconfig (Mac/Linux)
 export const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL || "http://localhost:4000/api";
+  process.env.EXPO_PUBLIC_API_URL || "http://192.168.1.100:4000/api";
 
 // API Endpoints
 export const API_ENDPOINTS = {
@@ -71,6 +69,33 @@ export const API_ENDPOINTS = {
     base: "/payments",
     byId: (id: number) => `/payments/${id}`,
     byTrip: (tripId: number) => `/payments/trip/${tripId}`,
+  },
+
+  // Geocoding & Directions
+  geocoding: {
+    search: "/geocoding/search",
+    searchNearby: "/geocoding/search-nearby",
+    reverse: "/geocoding/reverse",
+  },
+
+  directions: {
+    route: "/directions/route",
+    pricing: "/directions/pricing",
+  },
+
+  // Rides
+  rides: {
+    create: "/rides/create",
+    byId: (id: number) => `/rides/${id}`,
+    updateStatus: (id: number) => `/rides/${id}/status`,
+    accept: (id: number) => `/rides/${id}/accept`,
+    start: (id: number) => `/rides/${id}/start`,
+    complete: (id: number) => `/rides/${id}/complete`,
+    cancel: (id: number) => `/rides/${id}/cancel`,
+    passengerHistory: (passengerId: number) => `/rides/passenger/${passengerId}/history`,
+    driverHistory: (driverId: number) => `/rides/driver/${driverId}/history`,
+    activePassenger: (passengerId: number) => `/rides/passenger/${passengerId}/active`,
+    activeDriver: (driverId: number) => `/rides/driver/${driverId}/active`,
   },
 } as const;
 
