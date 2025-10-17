@@ -60,9 +60,10 @@ class RidesService {
    */
   async createRide(data: CreateRideDto): Promise<Ride> {
     try {
-      // Check if driver exists and is available
+      // Check if driver exists and is online
       const driver = await knex('drivers')
-        .where({ id: data.driverId, is_available: true })
+        .where({ id: data.driverId })
+        .whereIn('status', ['online', 'busy'])
         .first();
 
       if (!driver) {

@@ -14,7 +14,7 @@ export enum RideStatus {
 }
 
 export interface CreateRideParams {
-  passengerId: number;
+  // passengerId is extracted from JWT token on backend
   driverId: number;
   originLat: number;
   originLng: number;
@@ -59,11 +59,9 @@ class RidesService {
    * Create a new ride request
    */
   async createRide(params: CreateRideParams): Promise<Ride> {
-    const response = await apiClient.post<{ success: boolean; ride: Ride }>(
-      '/rides/create',
-      params
-    );
-    return response.ride;
+    // apiClient.post already extracts .data.data, so response is directly the Ride
+    const ride = await apiClient.post<Ride>('/rides/create', params);
+    return ride;
   }
 
   /**

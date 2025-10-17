@@ -5,17 +5,21 @@
 
 import { Router, Request, Response } from 'express';
 import ridesService, { CreateRideDto, RideStatus } from '../services/rides.service';
+import { authenticate } from '../middleware/auth';
 
 const router = Router();
 
 /**
  * POST /api/rides/create
  * Create a new ride request
+ * @requires Authentication
  */
-router.post('/create', async (req: Request, res: Response) => {
+router.post('/create', authenticate, async (req: Request, res: Response) => {
   try {
+    // Get passenger ID from authenticated user
+    const passengerId = req.user!.userId;
+
     const {
-      passengerId,
       driverId,
       originLat,
       originLng,
@@ -32,10 +36,10 @@ router.post('/create', async (req: Request, res: Response) => {
     } = req.body;
 
     // Validate required fields
-    if (!passengerId || !driverId || !originLat || !originLng || !destLat || !destLng) {
+    if (!driverId || !originLat || !originLng || !destLat || !destLng) {
       return res.status(400).json({
         error: 'Missing required fields',
-        required: ['passengerId', 'driverId', 'originLat', 'originLng', 'destLat', 'destLng'],
+        required: ['driverId', 'originLat', 'originLng', 'destLat', 'destLng'],
       });
     }
 
@@ -60,7 +64,7 @@ router.post('/create', async (req: Request, res: Response) => {
 
     res.status(201).json({
       success: true,
-      ride,
+      data: ride,
     });
   } catch (error: any) {
     console.error('Create ride error:', error);

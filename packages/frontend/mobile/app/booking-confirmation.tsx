@@ -114,9 +114,8 @@ export default function BookingConfirmationScreen() {
       const durationMin = parseInt(durationStr) || 0;
       const durationSeconds = durationMin * 60;
 
-      // Create ride
+      // Create ride (passengerId is extracted from JWT token on backend)
       const ride = await ridesService.createRide({
-        passengerId: 1, // TODO: Get from auth context
         driverId: parseInt(params.driverId as string),
         originLat,
         originLng,
