@@ -1,8 +1,18 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import colors from '../theme/colors';
+import { useAuth } from '../hooks/useAuth';
+import DriverTripsScreen from './DriverTripsScreen';
 
 const TrajetScreen: React.FC = () => {
+  const { user } = useAuth();
+
+  // If driver, show driver trips screen
+  if (user?.role === 'driver') {
+    return <DriverTripsScreen />;
+  }
+
+  // Passenger trips screen (to be implemented)
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Trajets</Text>

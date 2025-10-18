@@ -96,6 +96,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         ? err.message 
         : 'Login failed. Please check your credentials.';
       setError(errorMsg);
+      console.error('❌ Login failed:', errorMsg);
       throw err;
     } finally {
       setLoading(false);

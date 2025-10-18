@@ -85,7 +85,7 @@ router.get('/:rideId', async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      ride,
+      data: ride,
     });
   } catch (error: any) {
     console.error('Get ride error:', error);
@@ -151,7 +151,7 @@ router.post('/:rideId/accept', async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      ride,
+      data: ride,
     });
   } catch (error: any) {
     console.error('Accept ride error:', error);
@@ -178,7 +178,7 @@ router.post('/:rideId/start', async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      ride,
+      data: ride,
     });
   } catch (error: any) {
     console.error('Start ride error:', error);
@@ -209,7 +209,7 @@ router.post('/:rideId/complete', async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      ride,
+      data: ride,
     });
   } catch (error: any) {
     console.error('Complete ride error:', error);
@@ -272,13 +272,35 @@ router.get('/passenger/:passengerId/history', async (req: Request, res: Response
 
     res.json({
       success: true,
-      rides,
+      data: rides,
       pagination: { limit, offset },
     });
   } catch (error: any) {
     console.error('Get passenger rides error:', error);
     res.status(500).json({
       error: error.message || 'Failed to get passenger rides',
+    });
+  }
+});
+
+/**
+ * GET /api/rides/driver/:driverId/pending
+ * Get pending ride requests for a driver
+ */
+router.get('/driver/:driverId/pending', async (req: Request, res: Response) => {
+  try {
+    const { driverId } = req.params;
+
+    const rides = await ridesService.getDriverPendingRides(parseInt(driverId));
+
+    res.json({
+      success: true,
+      data: rides,
+    });
+  } catch (error: any) {
+    console.error('Get driver pending rides error:', error);
+    res.status(500).json({
+      error: error.message || 'Failed to get pending rides',
     });
   }
 });
@@ -301,7 +323,7 @@ router.get('/driver/:driverId/history', async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      rides,
+      data: rides,
       pagination: { limit, offset },
     });
   } catch (error: any) {

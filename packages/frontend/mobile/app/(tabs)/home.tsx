@@ -28,8 +28,22 @@ import { PlaceSuggestion } from '../../src/services/geocoding.service';
 import placesService from '../../src/services/places.service';
 import colors from '../../src/theme/colors';
 import { FavoritePlace, RecentDestination } from '../../src/types/places.types';
+import { useAuth } from '../../src/hooks/useAuth';
+import DriverDashboardScreen from '../../src/screens/DriverDashboardScreen';
 
 export default function NewHomeScreen() {
+  const { user } = useAuth();
+
+  // If user is a driver, show driver interface
+  if (user?.role === 'driver') {
+    return <DriverDashboardScreen />;
+  }
+
+  // Otherwise, show passenger interface
+  return <PassengerHomeScreen />;
+}
+
+function PassengerHomeScreen() {
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
   const [favorites, setFavorites] = useState<FavoritePlace[]>([]);
   const [recentDestinations, setRecentDestinations] = useState<RecentDestination[]>([]);

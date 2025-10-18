@@ -68,10 +68,8 @@ class RidesService {
    * Get ride details
    */
   async getRide(rideId: number): Promise<Ride> {
-    const response = await apiClient.get<{ success: boolean; ride: Ride }>(
-      `/rides/${rideId}`
-    );
-    return response.ride;
+    const ride = await apiClient.get<Ride>(`/rides/${rideId}`);
+    return ride;
   }
 
   /**
@@ -82,33 +80,24 @@ class RidesService {
     status: RideStatus,
     finalPrice?: number
   ): Promise<Ride> {
-    const response = await apiClient.patch<{ success: boolean; ride: Ride }>(
-      `/rides/${rideId}/status`,
-      { status, finalPrice }
-    );
-    return response.ride;
+    const ride = await apiClient.patch<Ride>(`/rides/${rideId}/status`, { status, finalPrice });
+    return ride;
   }
 
   /**
    * Accept ride (driver)
    */
   async acceptRide(rideId: number, driverId: number): Promise<Ride> {
-    const response = await apiClient.post<{ success: boolean; ride: Ride }>(
-      `/rides/${rideId}/accept`,
-      { driverId }
-    );
-    return response.ride;
+    const ride = await apiClient.post<Ride>(`/rides/${rideId}/accept`, { driverId });
+    return ride;
   }
 
   /**
    * Start ride (driver)
    */
   async startRide(rideId: number, driverId: number): Promise<Ride> {
-    const response = await apiClient.post<{ success: boolean; ride: Ride }>(
-      `/rides/${rideId}/start`,
-      { driverId }
-    );
-    return response.ride;
+    const ride = await apiClient.post<Ride>(`/rides/${rideId}/start`, { driverId });
+    return ride;
   }
 
   /**
@@ -119,11 +108,8 @@ class RidesService {
     driverId: number,
     finalPrice?: number
   ): Promise<Ride> {
-    const response = await apiClient.post<{ success: boolean; ride: Ride }>(
-      `/rides/${rideId}/complete`,
-      { driverId, finalPrice }
-    );
-    return response.ride;
+    const ride = await apiClient.post<Ride>(`/rides/${rideId}/complete`, { driverId, finalPrice });
+    return ride;
   }
 
   /**
@@ -134,11 +120,8 @@ class RidesService {
     userId: number,
     userType: 'passenger' | 'driver'
   ): Promise<Ride> {
-    const response = await apiClient.post<{ success: boolean; ride: Ride }>(
-      `/rides/${rideId}/cancel`,
-      { userId, userType }
-    );
-    return response.ride;
+    const ride = await apiClient.post<Ride>(`/rides/${rideId}/cancel`, { userId, userType });
+    return ride;
   }
 
   /**
@@ -149,14 +132,8 @@ class RidesService {
     limit: number = 20,
     offset: number = 0
   ): Promise<Ride[]> {
-    const response = await apiClient.get<{
-      success: boolean;
-      rides: Ride[];
-      pagination: { limit: number; offset: number };
-    }>(`/rides/passenger/${passengerId}/history`, {
-      params: { limit, offset },
-    });
-    return response.rides;
+    const rides = await apiClient.get<Ride[]>(`/rides/passenger/${passengerId}/history?limit=${limit}&offset=${offset}`);
+    return rides;
   }
 
   /**
@@ -167,14 +144,8 @@ class RidesService {
     limit: number = 20,
     offset: number = 0
   ): Promise<Ride[]> {
-    const response = await apiClient.get<{
-      success: boolean;
-      rides: Ride[];
-      pagination: { limit: number; offset: number };
-    }>(`/rides/driver/${driverId}/history`, {
-      params: { limit, offset },
-    });
-    return response.rides;
+    const rides = await apiClient.get<Ride[]>(`/rides/driver/${driverId}/history?limit=${limit}&offset=${offset}`);
+    return rides;
   }
 
   /**
@@ -195,6 +166,14 @@ class RidesService {
       `/rides/driver/${driverId}/active`
     );
     return response.ride;
+  }
+
+  /**
+   * Get pending rides for driver
+   */
+  async getDriverPendingRides(driverId: number): Promise<Ride[]> {
+    const rides = await apiClient.get<Ride[]>(`/rides/driver/${driverId}/pending`);
+    return rides;
   }
 }
 

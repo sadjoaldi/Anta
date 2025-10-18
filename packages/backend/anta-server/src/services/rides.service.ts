@@ -258,6 +258,17 @@ class RidesService {
   }
 
   /**
+   * Get pending rides for a driver
+   */
+  async getDriverPendingRides(driverId: number): Promise<Ride[]> {
+    const rides = await knex('rides')
+      .where({ driver_id: driverId, status: RideStatus.PENDING })
+      .orderBy('created_at', 'desc');
+
+    return rides;
+  }
+
+  /**
    * Get passenger ride history
    */
   async getPassengerRides(
