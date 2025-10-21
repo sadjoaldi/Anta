@@ -1,20 +1,18 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import colors from '../theme/colors';
+import { useAuth } from '../hooks/useAuth';
+import DriverTripsScreen from './DriverTripsScreen';
+import PassengerTripsScreen from './PassengerTripsScreen';
 
 const TrajetScreen: React.FC = () => {
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Trajets</Text>
-      <Text style={styles.subtitle}>Vos trajets en cours et à venir</Text>
-    </View>
-  );
-};
+  const { user } = useAuth();
 
-const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, backgroundColor: '#fff' },
-  title: { fontSize: 24, fontWeight: '700', color: colors.primary },
-  subtitle: { marginTop: 8, color: '#555' }
-});
+  // If driver, show driver trips screen
+  if (user?.role === 'driver') {
+    return <DriverTripsScreen />;
+  }
+
+  // Otherwise show passenger trips screen
+  return <PassengerTripsScreen />;
+};
 
 export default TrajetScreen;

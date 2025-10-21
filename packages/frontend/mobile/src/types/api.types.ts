@@ -12,6 +12,7 @@ export interface User {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  driver?: Driver; // Populated for drivers
 }
 
 export interface Driver {

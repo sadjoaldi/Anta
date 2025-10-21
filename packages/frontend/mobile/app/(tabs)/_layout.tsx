@@ -16,14 +16,11 @@ export default function TabsLayout() {
             case 'home':
               name = focused ? 'home' : 'home-outline';
               break;
-            case 'search':
-              name = focused ? 'search' : 'search-outline';
-              break;
             case 'trajet':
-              name = focused ? 'bicycle' : 'bicycle-outline';
+              name = focused ? 'car' : 'car-outline';
               break;
-            case 'messages':
-              name = focused ? 'chatbubbles' : 'chatbubbles-outline';
+            case 'notifications':
+              name = focused ? 'notifications' : 'notifications-outline';
               break;
             case 'profile':
               name = focused ? 'person' : 'person-outline';
@@ -35,9 +32,9 @@ export default function TabsLayout() {
     >
       <Tabs.Screen name="index" options={{ href: null }} />
       <Tabs.Screen name="home" options={{ title: 'Accueil' }} />
-      <Tabs.Screen name="search" options={{ title: 'Rechercher' }} />
+      <Tabs.Screen name="search" options={{ href: null }} />
       <Tabs.Screen name="trajet" options={{ title: 'Trajets' }} />
-      <Tabs.Screen name="messages" options={{ title: 'Messages' }} />
+      <Tabs.Screen name="notifications" options={{ title: 'Notifications' }} />
       <Tabs.Screen name="profile" options={{ title: 'Profil' }} />
     </Tabs>
   );

@@ -56,6 +56,7 @@ STEP5_VALIDATION.md
 TESTING_GUIDE.md
 TEST_FILES_README.md
 UPDATE_GUINEE.txt
+DRIVER_REGISTRATION_FIX.md
 
 # Tests (optionnels - décommenter si vous ne voulez pas les envoyer)
 # tests.http
