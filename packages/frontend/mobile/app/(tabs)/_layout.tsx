@@ -19,8 +19,8 @@ export default function TabsLayout() {
             case 'trajet':
               name = focused ? 'car' : 'car-outline';
               break;
-            case 'messages':
-              name = focused ? 'chatbubbles' : 'chatbubbles-outline';
+            case 'notifications':
+              name = focused ? 'notifications' : 'notifications-outline';
               break;
             case 'profile':
               name = focused ? 'person' : 'person-outline';
@@ -34,7 +34,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="home" options={{ title: 'Accueil' }} />
       <Tabs.Screen name="search" options={{ href: null }} />
       <Tabs.Screen name="trajet" options={{ title: 'Trajets' }} />
-      <Tabs.Screen name="messages" options={{ title: 'Messages' }} />
+      <Tabs.Screen name="notifications" options={{ title: 'Notifications' }} />
       <Tabs.Screen name="profile" options={{ title: 'Profil' }} />
     </Tabs>
   );

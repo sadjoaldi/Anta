@@ -4,6 +4,7 @@
  */
 
 import knex from '../utils/knex.js';
+import notificationsService from './notifications.service.js';
 
 export enum RideStatus {
   PENDING = 'pending',
@@ -114,6 +115,16 @@ class RidesService {
    */
   async getRideById(rideId: number): Promise<Ride> {
     const ride = await knex('rides')
+      .select(
+        'rides.*',
+        'driver_users.name as driver_name',
+        'driver_users.phone as driver_phone',
+        'passenger_users.name as passenger_name',
+        'passenger_users.phone as passenger_phone'
+      )
+      .leftJoin('drivers', 'rides.driver_id', 'drivers.id')
+      .leftJoin('users as driver_users', 'drivers.user_id', 'driver_users.id')
+      .leftJoin('users as passenger_users', 'rides.passenger_id', 'passenger_users.id')
       .where({ 'rides.id': rideId })
       .first();
 
@@ -187,7 +198,25 @@ class RidesService {
       throw new Error('Ride not found or already accepted/cancelled');
     }
 
-    return this.updateRideStatus(rideId, RideStatus.ACCEPTED);
+    const updatedRide = await this.updateRideStatus(rideId, RideStatus.ACCEPTED);
+
+    // Get driver name for notification
+    const driver = await knex('drivers')
+      .join('users', 'drivers.user_id', 'users.id')
+      .where('drivers.id', driverId)
+      .select('users.name')
+      .first();
+
+    // Send notification to passenger
+    if (driver) {
+      await notificationsService.notifyRideAccepted(
+        ride.passenger_id,
+        rideId,
+        driver.name
+      );
+    }
+
+    return updatedRide;
   }
 
   /**
@@ -202,7 +231,25 @@ class RidesService {
       throw new Error('Ride not found or not in accepted state');
     }
 
-    return this.updateRideStatus(rideId, RideStatus.STARTED);
+    const updatedRide = await this.updateRideStatus(rideId, RideStatus.STARTED);
+
+    // Get driver name for notification
+    const driver = await knex('drivers')
+      .join('users', 'drivers.user_id', 'users.id')
+      .where('drivers.id', driverId)
+      .select('users.name')
+      .first();
+
+    // Send notification to passenger
+    if (driver) {
+      await notificationsService.notifyRideStarted(
+        ride.passenger_id,
+        rideId,
+        driver.name
+      );
+    }
+
+    return updatedRide;
   }
 
   /**
@@ -226,7 +273,17 @@ class RidesService {
       additionalData.final_price = finalPrice;
     }
 
-    return this.updateRideStatus(rideId, RideStatus.COMPLETED, additionalData);
+    const updatedRide = await this.updateRideStatus(rideId, RideStatus.COMPLETED, additionalData);
+
+    // Send notification to passenger
+    const price = finalPrice || ride.estimated_price;
+    await notificationsService.notifyRideCompleted(
+      ride.passenger_id,
+      rideId,
+      price
+    );
+
+    return updatedRide;
   }
 
   /**
@@ -262,8 +319,14 @@ class RidesService {
    */
   async getDriverPendingRides(driverId: number): Promise<Ride[]> {
     const rides = await knex('rides')
-      .where({ driver_id: driverId, status: RideStatus.PENDING })
-      .orderBy('created_at', 'desc');
+      .select(
+        'rides.*',
+        'passenger_users.name as passenger_name',
+        'passenger_users.phone as passenger_phone'
+      )
+      .leftJoin('users as passenger_users', 'rides.passenger_id', 'passenger_users.id')
+      .where({ 'rides.driver_id': driverId, 'rides.status': RideStatus.PENDING })
+      .orderBy('rides.created_at', 'desc');
 
     return rides;
   }
@@ -277,8 +340,15 @@ class RidesService {
     offset: number = 0
   ): Promise<Ride[]> {
     const rides = await knex('rides')
-      .where({ passenger_id: passengerId })
-      .orderBy('created_at', 'desc')
+      .select(
+        'rides.*',
+        'driver_users.name as driver_name',
+        'driver_users.phone as driver_phone'
+      )
+      .leftJoin('drivers', 'rides.driver_id', 'drivers.id')
+      .leftJoin('users as driver_users', 'drivers.user_id', 'driver_users.id')
+      .where({ 'rides.passenger_id': passengerId })
+      .orderBy('rides.created_at', 'desc')
       .limit(limit)
       .offset(offset);
 
@@ -294,8 +364,14 @@ class RidesService {
     offset: number = 0
   ): Promise<Ride[]> {
     const rides = await knex('rides')
-      .where({ driver_id: driverId })
-      .orderBy('created_at', 'desc')
+      .select(
+        'rides.*',
+        'passenger_users.name as passenger_name',
+        'passenger_users.phone as passenger_phone'
+      )
+      .leftJoin('users as passenger_users', 'rides.passenger_id', 'passenger_users.id')
+      .where({ 'rides.driver_id': driverId })
+      .orderBy('rides.created_at', 'desc')
       .limit(limit)
       .offset(offset);
 

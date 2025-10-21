@@ -52,6 +52,11 @@ export interface Ride {
   updated_at: string;
   started_at?: string;
   completed_at?: string;
+  // Populated by backend joins
+  driver_name?: string;
+  driver_phone?: string;
+  passenger_name?: string;
+  passenger_phone?: string;
 }
 
 class RidesService {
