@@ -19,6 +19,10 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import ridesService, { Ride, RideStatus } from '../services/rides.service';
 import { useAuth } from '../hooks/useAuth';
 import themeColors from '../theme/colors';
+import DriverDetailsModal from '../components/DriverDetailsModal';
+import reviewsService from '../services/reviews.service';
+import RatingModal from '../components/RatingModal';
+import driverService from '../services/driver.service';
 
 const colors = {
   primary: themeColors.primary,
@@ -35,6 +39,9 @@ export default function PassengerTripsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedTab, setSelectedTab] = useState<'active' | 'completed'>('active');
+  const [selectedDriver, setSelectedDriver] = useState<any>(null);
+  const [showDriverModal, setShowDriverModal] = useState(false);
+  const [rideToRate, setRideToRate] = useState<Ride | null>(null);
 
   const loadRides = React.useCallback(async () => {
     if (!user?.id) return;
@@ -57,6 +64,16 @@ export default function PassengerTripsScreen() {
           (r) => r.status === RideStatus.COMPLETED || r.status === RideStatus.CANCELLED
         );
         setRides(completedRides);
+
+      // TODO: Vérifier s'il y a une course terminée à noter (nécessite has_review dans le backend)
+      // const completedWithoutReview = completedRides.find(
+      //   (r) => r.status === RideStatus.COMPLETED && !r.has_review
+      // );
+      // if (completedWithoutReview && selectedTab === 'completed') {
+      //   setTimeout(() => {
+      //     setRideToRate(completedWithoutReview);
+      //   }, 1000);
+      // }
       }
     } catch (error) {
       console.error('Failed to load rides:', error);
@@ -86,6 +103,64 @@ export default function PassengerTripsScreen() {
     // Remove + and spaces for WhatsApp format
     const cleanPhone = phone.replace(/[+\s]/g, '');
     Linking.openURL(`https://wa.me/${cleanPhone}`);
+  };
+
+  const handleViewDriverDetails = async (ride: Ride) => {
+    if (!ride.driver_id) return;
+
+    try {
+      // 1. Charger d'abord les infos du driver pour obtenir user_id
+      const driverInfo = await driverService.getDriverById(ride.driver_id);
+      if (!driverInfo) {
+        console.error('Driver not found');
+        return;
+      }
+
+      // 2. Charger les stats et badges avec le user_id
+      const [stats, badges] = await Promise.all([
+        reviewsService.getUserReviewStats(driverInfo.user_id),
+        reviewsService.getUserBadges(driverInfo.user_id)
+      ]);
+
+      setSelectedDriver({
+        id: ride.driver_id,
+        user_id: driverInfo.user_id,
+        name: ride.driver_name || driverInfo.user?.name || 'Chauffeur',
+        phone: ride.driver_phone || driverInfo.user?.phone || '',
+        vehicle_type: ride.vehicle_type || driverInfo.vehicle_type || '',
+        rating_avg: stats.average_rating,
+        total_trips: driverInfo.total_trips || 0,
+        total_reviews: stats.total_reviews,
+        badges: badges,
+        recent_reviews: stats.recent_reviews,
+        member_since: new Date().toISOString(),
+        vehicle_brand: driverInfo.vehicle_brand || '',
+        vehicle_model: driverInfo.vehicle_model || '',
+        vehicle_color: driverInfo.vehicle_color || '',
+        vehicle_plate: driverInfo.vehicle_plate || '',
+      });
+      setShowDriverModal(true);
+    } catch (error) {
+      console.error('Error loading driver details:', error);
+      // Fallback: afficher avec infos limitées
+      setSelectedDriver({
+        id: ride.driver_id,
+        name: ride.driver_name || 'Chauffeur',
+        phone: ride.driver_phone || '',
+        vehicle_type: ride.vehicle_type,
+        rating_avg: 4.5,
+        total_trips: 0,
+        total_reviews: 0,
+        badges: [],
+        recent_reviews: [],
+        member_since: new Date().toISOString(),
+        vehicle_brand: '',
+        vehicle_model: '',
+        vehicle_color: '',
+        vehicle_plate: '',
+      });
+      setShowDriverModal(true);
+    }
   };
 
   const getStatusBadge = (status: RideStatus) => {
@@ -174,12 +249,17 @@ export default function PassengerTripsScreen() {
         {/* Driver Contact (only for accepted/started rides) */}
         {showDriverContact && item.driver_phone && (
           <View style={styles.driverContact}>
-            <View style={styles.driverInfo}>
+            <TouchableOpacity
+              style={styles.driverInfo}
+              onPress={() => handleViewDriverDetails(item)}
+              activeOpacity={0.7}
+            >
               <Ionicons name="person-circle-outline" size={20} color={colors.primary} />
               <Text style={styles.driverName}>
                 {item.driver_name || 'Chauffeur'} - {item.driver_phone}
               </Text>
-            </View>
+              <Ionicons name="chevron-forward" size={16} color={colors.textLight} style={{ marginLeft: 'auto' }} />
+            </TouchableOpacity>
             <View style={styles.contactButtons}>
               <TouchableOpacity
                 style={[styles.contactButton, styles.callButton]}
@@ -262,6 +342,26 @@ export default function PassengerTripsScreen() {
           }
         />
       )}
+      {/* Driver Details Modal */}
+      <DriverDetailsModal
+        visible={showDriverModal}
+        driver={selectedDriver}
+        onClose={() => setShowDriverModal(false)}
+      />
+
+      {/* Rating Modal */}
+      <RatingModal
+        visible={!!rideToRate}
+        rideId={rideToRate?.id || 0}
+        reviewedId={rideToRate?.driver_id || 0}
+        reviewedName={rideToRate?.driver_name || 'Chauffeur'}
+        reviewerType="passenger"
+        onClose={() => setRideToRate(null)}
+        onSubmitSuccess={() => {
+          setRideToRate(null);
+          loadRides(); // Recharger pour mettre à jour
+        }}
+      />
     </View>
   );
 }

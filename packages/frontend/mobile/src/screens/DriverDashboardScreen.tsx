@@ -19,6 +19,8 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import ridesService, { Ride, RideStatus } from '../services/rides.service';
 import { useAuth } from '../hooks/useAuth';
 import themeColors from '../theme/colors';
+import locationService from '../services/location.service';
+import { Switch } from 'react-native';
 
 const colors = {
   primary: themeColors.primary,
@@ -42,12 +44,62 @@ export default function DriverDashboardScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [processingRideId, setProcessingRideId] = useState<number | null>(null);
+  const [isOnline, setIsOnline] = useState(false);
+  const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   useFocusEffect(
     React.useCallback(() => {
       loadDashboardData();
     }, [])
   );
+
+  // Cleanup location tracking on unmount
+  useEffect(() => {
+    return () => {
+      if (isOnline) {
+        locationService.stopWatchingLocation();
+      }
+    };
+  }, [isOnline]);
+
+  const toggleOnlineStatus = async () => {
+    if (!isOnline) {
+      // Go online
+      const hasPermission = await locationService.requestPermissions();
+      if (!hasPermission) {
+        Alert.alert(
+          'Permission requise',
+          'La localisation est nécessaire pour recevoir des courses.'
+        );
+        return;
+      }
+
+      // Start tracking location
+      const started = await locationService.startWatchingLocation(
+        async (location) => {
+          setCurrentLocation({ lat: location.latitude, lng: location.longitude });
+          
+          // TODO: Send location to backend
+          // await driverService.updateLocation(user.driver.id, location);
+        },
+        {
+          distanceInterval: 50,
+          timeInterval: 10000,
+        }
+      );
+
+      if (started) {
+        setIsOnline(true);
+        Alert.alert('En ligne', 'Vous pouvez maintenant recevoir des demandes de course.');
+      }
+    } else {
+      // Go offline
+      locationService.stopWatchingLocation();
+      setIsOnline(false);
+      setCurrentLocation(null);
+      Alert.alert('Hors ligne', 'Vous ne recevrez plus de demandes de course.');
+    }
+  };
 
   const loadDashboardData = async () => {
     if (!user?.driver?.id) return;
@@ -187,6 +239,29 @@ export default function DriverDashboardScreen() {
           <Ionicons name="notifications-outline" size={24} color="#1a1a1a" />
           {pendingRides.length > 0 && <View style={styles.notificationBadge} />}
         </TouchableOpacity>
+      </View>
+
+      {/* Online Status Toggle */}
+      <View style={styles.statusToggleCard}>
+        <View style={styles.statusInfo}>
+          <View style={styles.statusRow}>
+            <View style={[styles.statusDot, isOnline ? styles.statusOnline : styles.statusOffline]} />
+            <Text style={styles.statusText}>
+              {isOnline ? 'En ligne' : 'Hors ligne'}
+            </Text>
+          </View>
+          {currentLocation && isOnline && (
+            <Text style={styles.locationText}>
+              📍 Position mise à jour
+            </Text>
+          )}
+        </View>
+        <Switch
+          value={isOnline}
+          onValueChange={toggleOnlineStatus}
+          trackColor={{ false: '#ccc', true: colors.primary }}
+          thumbColor={isOnline ? '#fff' : '#f4f3f4'}
+        />
       </View>
 
       {/* Stats Cards */}
@@ -373,6 +448,51 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     backgroundColor: colors.danger,
+  },
+  statusToggleCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    marginHorizontal: 20,
+    marginVertical: 16,
+    padding: 16,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  statusInfo: {
+    flex: 1,
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  statusDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 8,
+  },
+  statusOnline: {
+    backgroundColor: colors.success,
+  },
+  statusOffline: {
+    backgroundColor: '#999',
+  },
+  statusText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1a1a1a',
+  },
+  locationText: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 4,
   },
   statsContainer: {
     padding: 20,

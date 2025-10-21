@@ -157,20 +157,30 @@ class RidesService {
    * Get active ride for passenger
    */
   async getActivePassengerRide(passengerId: number): Promise<Ride | null> {
-    const response = await apiClient.get<{ success: boolean; ride: Ride | null }>(
-      `/rides/passenger/${passengerId}/active`
-    );
-    return response.ride;
+    try {
+      const response = await apiClient.get<{ success: boolean; ride: Ride | null }>(
+        `/rides/passenger/${passengerId}/active`
+      );
+      return response?.ride || null;
+    } catch (error) {
+      console.error('Error fetching active ride:', error);
+      return null;
+    }
   }
 
   /**
    * Get active ride for driver
    */
   async getActiveDriverRide(driverId: number): Promise<Ride | null> {
-    const response = await apiClient.get<{ success: boolean; ride: Ride | null }>(
-      `/rides/driver/${driverId}/active`
-    );
-    return response.ride;
+    try {
+      const response = await apiClient.get<{ success: boolean; ride: Ride | null }>(
+        `/rides/driver/${driverId}/active`
+      );
+      return response?.ride || null;
+    } catch (error) {
+      console.error('Error fetching active driver ride:', error);
+      return null;
+    }
   }
 
   /**

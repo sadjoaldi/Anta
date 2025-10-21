@@ -51,6 +51,32 @@ class DriverService {
     );
     return response;
   }
+
+  /**
+   * Get driver details by driver_id
+   */
+  async getDriverById(driverId: number): Promise<Driver | null> {
+    try {
+      const driver = await apiClient.get<Driver>(`/drivers/${driverId}`);
+      return driver;
+    } catch (error) {
+      console.error('Error fetching driver by id:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Get driver details by user_id
+   */
+  async getDriverByUserId(userId: number): Promise<Driver | null> {
+    try {
+      const driver = await apiClient.get<Driver>(`/drivers/user/${userId}`);
+      return driver;
+    } catch (error) {
+      console.error('Error fetching driver details:', error);
+      return null;
+    }
+  }
 }
 
 export default new DriverService();

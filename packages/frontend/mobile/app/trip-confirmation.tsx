@@ -21,6 +21,8 @@ import { useRouteCalculation } from '../src/hooks/useRouteCalculation';
 import driverService, { Driver } from '../src/services/driver.service';
 import directionsService from '../src/services/directions.service';
 import colors from '../src/theme/colors';
+import DriverDetailsModal from '../src/components/DriverDetailsModal';
+import reviewsService from '../src/services/reviews.service';
 
 const { height } = Dimensions.get('window');
 
@@ -32,12 +34,15 @@ export default function TripConfirmationScreen() {
     destinationLng: string;
     originLat: string;
     originLng: string;
+    originName?: string;
   }>();
 
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [loadingDrivers, setLoadingDrivers] = useState(false);
   const [showDrivers, setShowDrivers] = useState(false);
   const [mapReady, setMapReady] = useState(false);
+  const [selectedDriver, setSelectedDriver] = useState<any>(null);
+  const [showDriverModal, setShowDriverModal] = useState(false);
 
   const mapRef = useRef<MapView>(null);
 
@@ -148,8 +153,60 @@ export default function TripConfirmationScreen() {
     }
   }, [polylineCoordinates.length, mapReady, routeInfo]);
 
-  // Handle driver selection
+  // Show driver details modal
+  const handleViewDriverDetails = async (driver: Driver) => {
+    try {
+      // Charger les détails complets du chauffeur
+      const [stats, badges] = await Promise.all([
+        reviewsService.getUserReviewStats(driver.user_id),
+        reviewsService.getUserBadges(driver.user_id)
+      ]);
+
+      setSelectedDriver({
+        id: driver.id,
+        user_id: driver.user_id,
+        name: driver.user?.name || 'Chauffeur',
+        phone: driver.user?.phone || '',
+        vehicle_type: driver.vehicle_type,
+        vehicle_brand: driver.vehicle_brand,
+        vehicle_model: driver.vehicle_model,
+        vehicle_color: driver.vehicle_color,
+        vehicle_plate: driver.vehicle_plate,
+        rating_avg: stats.average_rating,
+        total_trips: driver.total_trips || 0,
+        total_reviews: stats.total_reviews,
+        badges: badges,
+        recent_reviews: stats.recent_reviews,
+        member_since: new Date().toISOString(), // TODO: Obtenir du backend
+      });
+      setShowDriverModal(true);
+    } catch (error) {
+      console.error('Error loading driver details:', error);
+      // Fallback
+      setSelectedDriver({
+        id: driver.id,
+        user_id: driver.user_id,
+        name: driver.user?.name || 'Chauffeur',
+        phone: driver.user?.phone || '',
+        vehicle_type: driver.vehicle_type,
+        vehicle_brand: driver.vehicle_brand,
+        vehicle_model: driver.vehicle_model,
+        vehicle_color: driver.vehicle_color,
+        vehicle_plate: driver.vehicle_plate,
+        rating_avg: driver.rating_avg || 4.5,
+        total_trips: driver.total_trips || 0,
+        total_reviews: 0,
+        badges: [],
+        recent_reviews: [],
+        member_since: new Date().toISOString(),
+      });
+      setShowDriverModal(true);
+    }
+  };
+
+  // Handle driver selection (from modal)
   const handleSelectDriver = (driver: any) => {
+    setShowDriverModal(false);
     router.push({
       pathname: '/booking-confirmation',
       params: {
@@ -368,6 +425,7 @@ export default function TripConfirmationScreen() {
                   key={driver.id}
                   style={styles.driverCard}
                   activeOpacity={0.7}
+                  onPress={() => handleViewDriverDetails(driver)}
                 >
                   <View style={styles.driverAvatar}>
                     <Ionicons name="person" size={24} color={colors.primary} />
@@ -398,13 +456,9 @@ export default function TripConfirmationScreen() {
                         {(driver.distance / 1000).toFixed(1)} km
                       </Text>
                     )}
-                    <TouchableOpacity
-                      style={styles.selectButton}
-                      onPress={() => handleSelectDriver(driver)}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={styles.selectButtonText}>Choisir</Text>
-                    </TouchableOpacity>
+                    <View style={styles.viewDetailsButton}>
+                      <Ionicons name="chevron-forward" size={20} color={colors.primary} />
+                    </View>
                   </View>
                 </TouchableOpacity>
               ))
@@ -412,6 +466,23 @@ export default function TripConfirmationScreen() {
           </ScrollView>
         </View>
       )}
+
+      {/* Driver Details Modal */}
+      <DriverDetailsModal
+        visible={showDriverModal}
+        driver={selectedDriver}
+        tripInfo={{
+          origin: origin.name,
+          destination: destination.name,
+          estimatedPrice: routeInfo?.estimatedPrice.total || 0,
+        }}
+        onClose={() => setShowDriverModal(false)}
+        onSelectDriver={() => {
+          if (selectedDriver) {
+            handleSelectDriver(selectedDriver);
+          }
+        }}
+      />
     </View>
   );
 }
@@ -651,6 +722,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: '#fff',
+  },
+  viewDetailsButton: {
+    padding: 8,
   },
   destinationMarker: {
     width: 40,

@@ -30,6 +30,8 @@ import colors from '../../src/theme/colors';
 import { FavoritePlace, RecentDestination } from '../../src/types/places.types';
 import { useAuth } from '../../src/hooks/useAuth';
 import DriverDashboardScreen from '../../src/screens/DriverDashboardScreen';
+import ActiveRideTracker from '../../src/components/ActiveRideTracker';
+import ridesService, { Ride } from '../../src/services/rides.service';
 
 export default function NewHomeScreen() {
   const { user } = useAuth();
@@ -44,6 +46,7 @@ export default function NewHomeScreen() {
 }
 
 function PassengerHomeScreen() {
+  const { user } = useAuth();
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
   const [favorites, setFavorites] = useState<FavoritePlace[]>([]);
   const [recentDestinations, setRecentDestinations] = useState<RecentDestination[]>([]);
@@ -52,6 +55,7 @@ function PassengerHomeScreen() {
   const [editingFavorite, setEditingFavorite] = useState<FavoritePlace | null>(null);
   const [customOrigin, setCustomOrigin] = useState<PlaceSuggestion | null>(null);
   const [selectedDestination, setSelectedDestination] = useState<PlaceSuggestion | null>(null);
+  const [activeRide, setActiveRide] = useState<Ride | null>(null);
   
   // Animation values
   const fadeAnim = useState(new Animated.Value(0))[0];
@@ -154,8 +158,44 @@ function PassengerHomeScreen() {
   useFocusEffect(
     useCallback(() => {
       loadRecentDestinations();
+      loadActiveRide();
     }, [])
   );
+
+  const loadActiveRide = async () => {
+    if (!user?.id) return;
+    try {
+      const ride = await ridesService.getActivePassengerRide(user.id);
+      setActiveRide(ride);
+    } catch (error) {
+      console.error('Error loading active ride:', error);
+    }
+  };
+
+  const handleCancelRide = async () => {
+    if (!activeRide || !user?.id) return;
+    
+    Alert.alert(
+      'Annuler la course',
+      'Êtes-vous sûr de vouloir annuler cette course ?',
+      [
+        { text: 'Non', style: 'cancel' },
+        {
+          text: 'Oui, annuler',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await ridesService.cancelRide(activeRide.id, user.id, 'passenger');
+              setActiveRide(null);
+              Alert.alert('Succès', 'Course annulée');
+            } catch (error: any) {
+              Alert.alert('Erreur', error.message || 'Impossible d\'annuler la course');
+            }
+          },
+        },
+      ]
+    );
+  };
 
   const loadFavorites = async () => {
     const favs = await placesService.getFavorites();
@@ -416,6 +456,17 @@ function PassengerHomeScreen() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
+        {/* Active Ride Tracker */}
+        {activeRide && (
+          <View style={{ marginBottom: 20 }}>
+            <ActiveRideTracker
+              ride={activeRide}
+              onViewDetails={() => router.push('/(tabs)/trajet')}
+              onCancel={handleCancelRide}
+            />
+          </View>
+        )}
+
         <Animated.View style={[styles.inputGroup, { transform: [{ translateY: slideAnim }] }]}>
           <Text style={styles.inputLabel}>📍 D'où partez-vous ?</Text>
           <SearchHomeInput
