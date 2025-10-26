@@ -159,11 +159,19 @@ function PassengerHomeScreen() {
     useCallback(() => {
       loadRecentDestinations();
       loadActiveRide();
+      
+      // Poll active ride every 30 seconds
+      const interval = setInterval(() => {
+        loadActiveRide();
+      }, 30000);
+      
+      return () => clearInterval(interval);
     }, [])
   );
 
   const loadActiveRide = async () => {
     if (!user?.id) return;
+    
     try {
       const ride = await ridesService.getActivePassengerRide(user.id);
       setActiveRide(ride);

@@ -343,9 +343,10 @@ router.get('/passenger/:passengerId/active', async (req: Request, res: Response)
     const { passengerId } = req.params;
     const ride = await ridesService.getActivePassengerRide(parseInt(passengerId));
 
+    // Use standard ApiResponse format: { success, data }
     res.json({
       success: true,
-      ride,
+      data: ride,
     });
   } catch (error: any) {
     console.error('Get active passenger ride error:', error);
@@ -364,9 +365,10 @@ router.get('/driver/:driverId/active', async (req: Request, res: Response) => {
     const { driverId } = req.params;
     const ride = await ridesService.getActiveDriverRide(parseInt(driverId));
 
+    // Use standard ApiResponse format: { success, data }
     res.json({
       success: true,
-      ride,
+      data: ride,  // ← Changed from "ride" to "data"
     });
   } catch (error: any) {
     console.error('Get active driver ride error:', error);

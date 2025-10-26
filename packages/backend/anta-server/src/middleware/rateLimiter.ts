@@ -3,11 +3,12 @@ import { ApiResponse } from '../utils/ApiResponse.js';
 
 /**
  * General API rate limiter
- * 100 requests per 15 minutes per IP
+ * 100 requests per 15 minutes per IP (production)
+ * 1000 requests per 15 minutes per IP (development)
  */
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100,
+  max: process.env.NODE_ENV === 'production' ? 100 : 1000, // More lenient in dev
   message: 'Too many requests from this IP, please try again later',
   standardHeaders: true,
   legacyHeaders: false,

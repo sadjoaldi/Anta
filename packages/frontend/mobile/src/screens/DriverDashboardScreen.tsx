@@ -50,7 +50,16 @@ export default function DriverDashboardScreen() {
   useFocusEffect(
     React.useCallback(() => {
       loadDashboardData();
-    }, [])
+      
+      // Poll dashboard data every 15 seconds when online
+      const interval = setInterval(() => {
+        if (isOnline) {
+          loadDashboardData();
+        }
+      }, 15000);
+      
+      return () => clearInterval(interval);
+    }, [isOnline])
   );
 
   // Cleanup location tracking on unmount
