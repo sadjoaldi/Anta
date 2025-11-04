@@ -1,13 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Car, CheckCircle, XCircle, RefreshCw, X, Star } from "lucide-react";
+import { Car, CheckCircle, RefreshCw, X, Star, Eye } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
 import { Input } from "../components/ui/input";
 import { Badge } from "../components/ui/badge";
 import { Pagination } from "../components/ui/pagination";
 import { ExportButton } from "../components/ExportButton";
+import KYCValidationModal from "../components/KYCValidationModal";
 import driverService from "../services/driver.service";
 import type { DriverWithUser } from "../types/api.types";
 
@@ -19,6 +20,8 @@ export default function Drivers() {
   const [loading, setLoading] = useState(true);
   const [totalPages, setTotalPages] = useState(1);
   const [kycFilter, setKycFilter] = useState<string>(searchParams.get('kyc') || "");
+  const [selectedDriver, setSelectedDriver] = useState<DriverWithUser | null>(null);
+  const [showKYCModal, setShowKYCModal] = useState(false);
 
   const fetchDrivers = useCallback(async () => {
     try {
@@ -56,32 +59,35 @@ export default function Drivers() {
     }
   };
 
-  const handleApprove = async (driverId: number) => {
-    if (!confirm("Voulez-vous vraiment approuver ce chauffeur ?")) return;
-    
+  const handleViewKYC = (driver: DriverWithUser) => {
+    setSelectedDriver(driver);
+    setShowKYCModal(true);
+  };
+
+  const handleCloseKYCModal = () => {
+    setShowKYCModal(false);
+    setSelectedDriver(null);
+  };
+
+  const handleApproveFromModal = async (driverId: number) => {
     try {
       await driverService.approveKyc(driverId);
-      alert("Chauffeur approuvé avec succès !");
       fetchDrivers();
       fetchStats();
     } catch (error) {
-      alert("Erreur lors de l'approbation");
       console.error(error);
+      throw error;
     }
   };
 
-  const handleReject = async (driverId: number) => {
-    const reason = prompt("Raison du rejet (optionnel) :");
-    if (reason === null) return; // User cancelled
-    
+  const handleRejectFromModal = async (driverId: number, reason: string) => {
     try {
       await driverService.rejectKyc(driverId, reason);
-      alert("Chauffeur rejeté");
       fetchDrivers();
       fetchStats();
     } catch (error) {
-      alert("Erreur lors du rejet");
       console.error(error);
+      throw error;
     }
   };
 
@@ -285,46 +291,16 @@ export default function Drivers() {
                         </TableCell>
                         <TableCell>{getKycBadge(driver.kyc_status)}</TableCell>
                         <TableCell className="text-right">{Number(driver.rating_avg).toFixed(1)} ⭐</TableCell>
-                        <TableCell className="text-right space-x-2">
-                          {driver.kyc_status === "pending" && (
-                            <>
-                              <motion.button
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                onClick={() => handleApprove(driver.id)}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white rounded-lg text-sm font-medium transition-all shadow-sm"
-                              >
-                                <CheckCircle className="h-4 w-4" />
-                                Approuver
-                              </motion.button>
-                              <motion.button
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                onClick={() => handleReject(driver.id)}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-sm font-medium transition-colors"
-                              >
-                                <XCircle className="h-4 w-4" />
-                                Rejeter
-                              </motion.button>
-                            </>
-                          )}
-                          {driver.kyc_status === "approved" && (
-                            <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-sm font-medium">
-                              <CheckCircle className="h-4 w-4" />
-                              Approuvé
-                            </span>
-                          )}
-                          {driver.kyc_status === "rejected" && (
-                            <motion.button
-                              whileHover={{ scale: 1.05 }}
-                              whileTap={{ scale: 0.95 }}
-                              onClick={() => handleApprove(driver.id)}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-lg text-sm font-medium transition-all shadow-sm"
-                            >
-                              <RefreshCw className="h-4 w-4" />
-                              Réapprouver
-                            </motion.button>
-                          )}
+                        <TableCell className="text-right">
+                          <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => handleViewKYC(driver)}
+                            className="inline-flex items-center gap-1 px-4 py-2 bg-gradient-to-r from-fuchsia-500 to-pink-600 hover:from-fuchsia-600 hover:to-pink-700 text-white rounded-lg text-sm font-medium transition-all shadow-sm"
+                          >
+                            <Eye className="h-4 w-4" />
+                            Voir détails
+                          </motion.button>
                         </TableCell>
                       </TableRow>
                     ))
@@ -336,6 +312,16 @@ export default function Drivers() {
           )}
         </CardContent>
       </Card>
+
+      {/* KYC Validation Modal */}
+      {showKYCModal && selectedDriver && (
+        <KYCValidationModal
+          driver={selectedDriver}
+          onClose={handleCloseKYCModal}
+          onApprove={handleApproveFromModal}
+          onReject={handleRejectFromModal}
+        />
+      )}
     </motion.div>
   );
 }

@@ -52,3 +52,10 @@ OTP_QUICKSTART.md
 PHASE_2B_SEARCH_AUTOCOMPLETE.md
 OTP_IMPLEMENTATION_SUMMARY.md
 AMELIORATIONS_UX.md
+
+# Documentation complète (ne pas versionner)
+DOCUMENTATION.md
+docs/BACKEND.md
+docs/MOBILE.md
+docs/WEB.md
+docs/ROADMAP.md

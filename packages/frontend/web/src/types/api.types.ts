@@ -43,6 +43,26 @@ export interface Driver {
   bank_name?: string | null;
   account_number?: string | null;
   account_holder?: string | null;
+  // KYC Documents
+  kyc_documents?: KYCDocuments;
+  kyc_rejection_reason?: string | null;
+  kyc_approved_at?: string | null;
+  kyc_rejected_at?: string | null;
+  kyc_approved_by?: number | null;
+}
+
+export interface KYCDocuments {
+  photo_profil?: string | null;
+  photo_cni_recto?: string | null;
+  photo_cni_verso?: string | null;
+  photo_permis_recto?: string | null;
+  photo_permis_verso?: string | null;
+  photo_carte_grise?: string | null;
+  photo_vehicule_avant?: string | null;
+  photo_vehicule_arriere?: string | null;
+  photo_vehicule_gauche?: string | null;
+  photo_vehicule_droite?: string | null;
+  photo_vehicule_interieur?: string | null;
 }
 
 export interface DriverWithUser extends Driver {
