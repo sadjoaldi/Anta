@@ -54,6 +54,12 @@ export interface Driver {
   current_latitude?: number | null;
   current_longitude?: number | null;
   location_updated_at?: Date | null;
+  // KYC documents and metadata
+  kyc_documents?: string | null; // JSON string
+  kyc_rejection_reason?: string | null;
+  kyc_approved_at?: Date | null;
+  kyc_rejected_at?: Date | null;
+  kyc_approved_by?: number | null;
 }
 
 export interface Vehicle {

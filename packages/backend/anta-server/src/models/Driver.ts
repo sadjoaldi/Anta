@@ -119,15 +119,40 @@ export class DriverModel extends BaseModel<Driver, DriverInsert, DriverUpdate> {
   /**
    * Approve driver KYC
    */
-  async approveKyc(id: number): Promise<number> {
-    return this.updateById(id, { kyc_status: 'approved' });
+  async approveKyc(id: number, adminId: number): Promise<number> {
+    return this.db(this.tableName)
+      .where({ id })
+      .update({ 
+        kyc_status: 'approved',
+        kyc_approved_at: this.db.fn.now() as any,
+        kyc_approved_by: adminId,
+        kyc_rejection_reason: null,
+        kyc_rejected_at: null
+      } as any);
   }
 
   /**
    * Reject driver KYC
    */
-  async rejectKyc(id: number): Promise<number> {
-    return this.updateById(id, { kyc_status: 'rejected' });
+  async rejectKyc(id: number, adminId: number, reason?: string): Promise<number> {
+    return this.db(this.tableName)
+      .where({ id })
+      .update({ 
+        kyc_status: 'rejected',
+        kyc_rejected_at: this.db.fn.now() as any,
+        kyc_approved_by: adminId,
+        kyc_rejection_reason: reason || 'Aucune raison fournie',
+        kyc_approved_at: null
+      } as any);
+  }
+
+  /**
+   * Update driver KYC documents
+   */
+  async updateKycDocuments(id: number, documents: any): Promise<number> {
+    return this.updateById(id, { 
+      kyc_documents: JSON.stringify(documents)
+    });
   }
 
   /**

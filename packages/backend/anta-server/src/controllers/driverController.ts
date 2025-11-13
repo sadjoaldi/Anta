@@ -3,9 +3,11 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { ApiError } from '../utils/ApiError.js';
 import { logAdminAction } from '../utils/adminLogger.js';
+import { cleanupUploadedFiles } from '../middleware/upload.js';
 import Driver from '../models/Driver.js';
 import User from '../models/User.js';
 import { DriverStatus } from '../models/types.js';
+import path from 'path';
 
 /**
  * @desc    Get all drivers
@@ -366,8 +368,10 @@ export const approveDriverKyc = asyncHandler(async (req: Request, res: Response)
     throw ApiError.badRequest('Driver KYC is already approved');
   }
 
+  const adminId = (req.user as any).userId;
+
   // Approve the driver KYC
-  await Driver.approveKyc(driverId);
+  await Driver.approveKyc(driverId, adminId);
   
   // Update user role to 'driver' now that they're approved
   await User.updateById(driver.user_id, { role: 'driver' });
@@ -376,7 +380,7 @@ export const approveDriverKyc = asyncHandler(async (req: Request, res: Response)
 
   // Log admin action
   await logAdminAction({
-    adminId: (req.user as any).userId,
+    adminId,
     action: 'driver_kyc_approved',
     resourceType: 'driver',
     resourceId: driverId,
@@ -405,8 +409,10 @@ export const rejectDriverKyc = asyncHandler(async (req: Request, res: Response) 
     throw ApiError.badRequest('Driver KYC is already rejected');
   }
 
+  const adminId = (req.user as any).userId;
+
   // Reject the driver KYC
-  await Driver.rejectKyc(driverId);
+  await Driver.rejectKyc(driverId, adminId, reason);
   
   // Keep user role as 'passenger' since they're rejected
   // (In case they were approved before and are being rejected again)
@@ -416,7 +422,7 @@ export const rejectDriverKyc = asyncHandler(async (req: Request, res: Response) 
 
   // Log admin action
   await logAdminAction({
-    adminId: (req.user as any).userId,
+    adminId,
     action: 'driver_kyc_rejected',
     resourceType: 'driver',
     resourceId: driverId,
@@ -427,8 +433,124 @@ export const rejectDriverKyc = asyncHandler(async (req: Request, res: Response) 
   // TODO: Send notification to driver with rejection reason
   // await notificationService.sendKycRejection(driver.user_id, reason);
 
-  res.json(ApiResponse.success(
-    { ...updatedDriver, rejection_reason: reason },
-    'Driver KYC rejected'
-  ));
+  res.json(ApiResponse.success(updatedDriver, 'Driver KYC rejected'));
+});
+
+/**
+ * @desc    Upload KYC documents for a driver
+ * @route   POST /api/drivers/:id/documents/upload
+ * @access  Private (Driver own or Admin)
+ */
+export const uploadKycDocuments = asyncHandler(async (req: Request, res: Response) => {
+  const driverId = parseInt(req.params.id);
+  const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+
+  // Vérifier que le driver existe
+  const driver = await Driver.findById(driverId);
+  if (!driver) {
+    // Nettoyer les fichiers uploadés
+    if (files) {
+      const allFiles = Object.values(files).flat();
+      cleanupUploadedFiles(allFiles);
+    }
+    throw ApiError.notFound('Driver');
+  }
+
+  // Vérifier les permissions (driver peut uploader ses propres docs, admin peut tout)
+  const userId = (req.user as any).userId;
+  const userRole = (req.user as any).role;
+  
+  if (userRole !== 'admin' && driver.user_id !== userId) {
+    // Nettoyer les fichiers uploadés
+    if (files) {
+      const allFiles = Object.values(files).flat();
+      cleanupUploadedFiles(allFiles);
+    }
+    throw ApiError.forbidden('You can only upload your own documents');
+  }
+
+  // Construire l'objet des URLs des documents
+  const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 4000}`;
+  const documents: any = {};
+
+  if (files['photo_profil']?.[0]) {
+    documents.photo_profil = `${baseUrl}/uploads/kyc/${files['photo_profil'][0].filename}`;
+  }
+  if (files['photo_cni_recto']?.[0]) {
+    documents.photo_cni_recto = `${baseUrl}/uploads/kyc/${files['photo_cni_recto'][0].filename}`;
+  }
+  if (files['photo_cni_verso']?.[0]) {
+    documents.photo_cni_verso = `${baseUrl}/uploads/kyc/${files['photo_cni_verso'][0].filename}`;
+  }
+  if (files['photo_permis_recto']?.[0]) {
+    documents.photo_permis_recto = `${baseUrl}/uploads/kyc/${files['photo_permis_recto'][0].filename}`;
+  }
+  if (files['photo_permis_verso']?.[0]) {
+    documents.photo_permis_verso = `${baseUrl}/uploads/kyc/${files['photo_permis_verso'][0].filename}`;
+  }
+  if (files['photo_carte_grise']?.[0]) {
+    documents.photo_carte_grise = `${baseUrl}/uploads/kyc/${files['photo_carte_grise'][0].filename}`;
+  }
+  if (files['photo_vehicule']?.[0]) {
+    documents.photo_vehicule = `${baseUrl}/uploads/kyc/${files['photo_vehicule'][0].filename}`;
+  }
+
+  // Si aucun fichier n'a été uploadé
+  if (Object.keys(documents).length === 0) {
+    throw ApiError.badRequest('No valid files uploaded');
+  }
+
+  // Récupérer les documents existants et les fusionner avec les nouveaux
+  let existingDocuments = {};
+  if (driver.kyc_documents) {
+    try {
+      existingDocuments = typeof driver.kyc_documents === 'string' 
+        ? JSON.parse(driver.kyc_documents)
+        : driver.kyc_documents;
+    } catch (error) {
+      console.error('Error parsing existing documents:', error);
+    }
+  }
+
+  const updatedDocuments = {
+    ...existingDocuments,
+    ...documents
+  };
+
+  // Mettre à jour les documents KYC dans la base de données
+  await Driver.updateKycDocuments(driverId, updatedDocuments);
+
+  // Si tous les documents requis sont présents, mettre le statut KYC en "pending"
+  const requiredDocs = ['photo_profil', 'photo_cni_recto', 'photo_cni_verso', 
+                        'photo_permis_recto', 'photo_permis_verso', 
+                        'photo_carte_grise', 'photo_vehicule'];
+  
+  const allDocsPresent = requiredDocs.every(doc => updatedDocuments[doc]);
+  
+  if (allDocsPresent && driver.kyc_status !== 'approved') {
+    await Driver.updateKycStatus(driverId, 'pending');
+  }
+
+  const updatedDriver = await Driver.findById(driverId);
+
+  // Log l'action
+  await logAdminAction({
+    adminId: userId,
+    action: 'driver_documents_uploaded',
+    resourceType: 'driver',
+    resourceId: driverId,
+    details: { 
+      uploaded_documents: Object.keys(documents),
+      total_documents: Object.keys(updatedDocuments).length,
+      all_required_present: allDocsPresent
+    },
+    req,
+  });
+
+  res.json(ApiResponse.success({
+    driver: updatedDriver,
+    documents: updatedDocuments,
+    uploaded: Object.keys(documents),
+    kyc_complete: allDocsPresent
+  }, 'Documents uploaded successfully'));
 });

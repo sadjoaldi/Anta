@@ -66,24 +66,8 @@ export default function KYCValidationModal({
       label: "Carte Grise",
     },
     {
-      url: driver.kyc_documents?.photo_vehicule_avant || "https://via.placeholder.com/800x600?text=Véhicule+Avant",
-      label: "Véhicule - Avant",
-    },
-    {
-      url: driver.kyc_documents?.photo_vehicule_arriere || "https://via.placeholder.com/800x600?text=Véhicule+Arrière",
-      label: "Véhicule - Arrière",
-    },
-    {
-      url: driver.kyc_documents?.photo_vehicule_gauche || "https://via.placeholder.com/800x600?text=Véhicule+Gauche",
-      label: "Véhicule - Gauche",
-    },
-    {
-      url: driver.kyc_documents?.photo_vehicule_droite || "https://via.placeholder.com/800x600?text=Véhicule+Droite",
-      label: "Véhicule - Droite",
-    },
-    {
-      url: driver.kyc_documents?.photo_vehicule_interieur || "https://via.placeholder.com/800x600?text=Véhicule+Intérieur",
-      label: "Véhicule - Intérieur",
+      url: driver.kyc_documents?.photo_vehicule || "https://via.placeholder.com/800x600?text=Véhicule",
+      label: "Photo du Véhicule",
     },
   ];
 

@@ -58,11 +58,7 @@ export interface KYCDocuments {
   photo_permis_recto?: string | null;
   photo_permis_verso?: string | null;
   photo_carte_grise?: string | null;
-  photo_vehicule_avant?: string | null;
-  photo_vehicule_arriere?: string | null;
-  photo_vehicule_gauche?: string | null;
-  photo_vehicule_droite?: string | null;
-  photo_vehicule_interieur?: string | null;
+  photo_vehicule?: string | null;
 }
 
 export interface DriverWithUser extends Driver {

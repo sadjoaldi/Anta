@@ -1,0 +1,13 @@
+### Test: Get driver by user ID (Aliou - userId = 12)
+GET http://localhost:4000/api/drivers/user/12
+Authorization: Bearer YOUR_JWT_TOKEN
+
+### Alternative: avec curl
+# Obtenir d'abord un token JWT
+# curl -X POST http://localhost:4000/api/auth/login \
+#   -H "Content-Type: application/json" \
+#   -d '{"phone":"+224622505050","password":"PASSWORD_ALIOU"}'
+
+# Puis tester l'endpoint
+# curl http://localhost:4000/api/drivers/user/12 \
+#   -H "Authorization: Bearer YOUR_JWT_TOKEN"

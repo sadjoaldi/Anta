@@ -21,6 +21,7 @@ import { useAuth } from '../hooks/useAuth';
 import themeColors from '../theme/colors';
 import locationService from '../services/location.service';
 import { Switch } from 'react-native';
+import driverProfileService from '../services/driverProfile.service';
 
 const colors = {
   primary: themeColors.primary,
@@ -46,20 +47,47 @@ export default function DriverDashboardScreen() {
   const [processingRideId, setProcessingRideId] = useState<number | null>(null);
   const [isOnline, setIsOnline] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [profileChecked, setProfileChecked] = useState(false);
+
+  // Vérifier le profil au chargement
+  useEffect(() => {
+    checkDriverProfile();
+  }, []);
+
+  const checkDriverProfile = async () => {
+    if (!user?.id) return;
+
+    try {
+      const status = await driverProfileService.checkProfileStatus(user.id);
+      
+      // Si les documents ne sont pas complets ou si le KYC est rejeté, rediriger
+      if (!status.hasAllDocuments || status.kycStatus === 'rejected') {
+        router.replace('/driver/complete-profile');
+        return;
+      }
+      
+      setProfileChecked(true);
+    } catch (error: any) {
+      // En cas d'erreur (ex: driver n'existe pas), rediriger vers la page de complétion
+      router.replace('/driver/complete-profile');
+    }
+  };
 
   useFocusEffect(
     React.useCallback(() => {
-      loadDashboardData();
-      
-      // Poll dashboard data every 15 seconds when online
-      const interval = setInterval(() => {
-        if (isOnline) {
-          loadDashboardData();
-        }
-      }, 15000);
-      
-      return () => clearInterval(interval);
-    }, [isOnline])
+      if (profileChecked) {
+        loadDashboardData();
+        
+        // Poll dashboard data every 15 seconds when online
+        const interval = setInterval(() => {
+          if (isOnline) {
+            loadDashboardData();
+          }
+        }, 15000);
+        
+        return () => clearInterval(interval);
+      }
+    }, [isOnline, profileChecked])
   );
 
   // Cleanup location tracking on unmount

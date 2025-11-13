@@ -16,9 +16,11 @@ import {
   getPendingKycDrivers,
   getDriversByKycStatus,
   approveDriverKyc,
-  rejectDriverKyc
+  rejectDriverKyc,
+  uploadKycDocuments
 } from '../controllers/driverController.js';
 import { authenticate, requireAdmin, requireRole } from '../middleware/auth.js';
+import { uploadKycDocuments as uploadMiddleware } from '../middleware/upload.js';
 
 const router = Router();
 
@@ -50,5 +52,8 @@ router.post('/:id/increment-trips', authenticate, incrementDriverTrips); // Syst
 // KYC action routes (Admin only)
 router.patch('/:id/kyc/approve', authenticate, requireAdmin, approveDriverKyc); // Approve driver KYC
 router.patch('/:id/kyc/reject', authenticate, requireAdmin, rejectDriverKyc); // Reject driver KYC
+
+// Document upload route (Driver own or Admin)
+router.post('/:id/documents/upload', authenticate, requireRole('driver', 'admin'), uploadMiddleware, uploadKycDocuments); // Upload KYC documents
 
 export default router;

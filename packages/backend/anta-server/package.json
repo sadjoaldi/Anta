@@ -14,6 +14,7 @@
   "dependencies": {
     "@types/bcrypt": "^6.0.0",
     "@types/jsonwebtoken": "^9.0.10",
+    "@types/multer": "^2.0.0",
     "anta-monorepo": "file:../../..",
     "axios": "^1.12.2",
     "bcrypt": "^6.0.0",
@@ -24,12 +25,14 @@
     "json2csv": "^6.0.0-alpha.2",
     "jsonwebtoken": "^9.0.2",
     "knex": "^3.1.0",
+    "multer": "^2.0.2",
     "mysql2": "^3.15.1",
     "sqlite3": "^5.1.7",
     "ws": "^8.18.0",
     "zod": "^4.1.11"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.19",
     "@types/express": "^4.17.21",
     "@types/json2csv": "^5.0.7",
     "@types/node": "^20.11.30",

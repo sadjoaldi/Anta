@@ -1,0 +1,60 @@
+### Upload KYC Documents for Driver
+# Remplacer :id par l'ID du chauffeur
+# Remplacer YOUR_JWT_TOKEN par votre token d'authentification
+# Remplacer les chemins des fichiers par vos vrais fichiers
+
+POST http://localhost:4000/api/drivers/1/documents/upload
+Authorization: Bearer YOUR_JWT_TOKEN
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="photo_profil"; filename="profil.jpg"
+Content-Type: image/jpeg
+
+< ./test-images/profil.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="photo_cni_recto"; filename="cni-recto.jpg"
+Content-Type: image/jpeg
+
+< ./test-images/cni-recto.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="photo_cni_verso"; filename="cni-verso.jpg"
+Content-Type: image/jpeg
+
+< ./test-images/cni-verso.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="photo_permis_recto"; filename="permis-recto.jpg"
+Content-Type: image/jpeg
+
+< ./test-images/permis-recto.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="photo_permis_verso"; filename="permis-verso.jpg"
+Content-Type: image/jpeg
+
+< ./test-images/permis-verso.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="photo_carte_grise"; filename="carte-grise.jpg"
+Content-Type: image/jpeg
+
+< ./test-images/carte-grise.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="photo_vehicule"; filename="vehicule.jpg"
+Content-Type: image/jpeg
+
+< ./test-images/vehicule.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### Alternative: Upload with curl
+# curl -X POST http://localhost:4000/api/drivers/1/documents/upload \
+#   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+#   -F "photo_profil=@./profil.jpg" \
+#   -F "photo_cni_recto=@./cni-recto.jpg" \
+#   -F "photo_cni_verso=@./cni-verso.jpg" \
+#   -F "photo_permis_recto=@./permis-recto.jpg" \
+#   -F "photo_permis_verso=@./permis-verso.jpg" \
+#   -F "photo_carte_grise=@./carte-grise.jpg" \
+#   -F "photo_vehicule=@./vehicule.jpg"
+
+### Get driver to verify documents
+GET http://localhost:4000/api/drivers/1
+Authorization: Bearer YOUR_JWT_TOKEN

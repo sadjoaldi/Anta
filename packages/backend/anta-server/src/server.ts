@@ -43,6 +43,9 @@ app.use(cors(configureCors(corsOrigins)));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Serve static files (uploaded documents)
+app.use('/uploads', express.static('uploads'));
+
 // Rate limiting (apply to all API routes)
 app.use('/api', apiLimiter);
 

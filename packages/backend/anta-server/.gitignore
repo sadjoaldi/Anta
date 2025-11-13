@@ -34,6 +34,9 @@ Thumbs.db
 *.db
 data/
 
+# Uploads (KYC documents, etc.)
+uploads/
+
 # Documentation détaillée (garder seulement README.md et .env.example)
 API_DOCUMENTATION.md
 AUTH_IMPLEMENTATION.md
