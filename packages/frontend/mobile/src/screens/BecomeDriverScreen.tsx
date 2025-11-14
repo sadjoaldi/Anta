@@ -87,12 +87,12 @@ export default function BecomeDriverScreen() {
       await refreshUser();
 
       Alert.alert(
-        'Demande envoyée ! 🎉',
-        'Votre demande pour devenir chauffeur a été envoyée avec succès. Nous examinerons votre dossier dans les 24-48h.\n\nVous pouvez continuer à utiliser l\'application en tant que passager.',
+        'Informations enregistrées ! ✅',
+        'Vos informations de véhicule ont été enregistrées.\n\nMaintenant, vous devez uploader vos documents KYC (CNI, permis, photos, etc.) pour finaliser votre demande.',
         [
           {
-            text: 'OK',
-            onPress: () => router.replace('/(tabs)/profile'),
+            text: 'Continuer',
+            onPress: () => router.replace('/driver/complete-profile'),
           },
         ]
       );

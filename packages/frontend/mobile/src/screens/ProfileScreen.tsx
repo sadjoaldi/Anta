@@ -1,5 +1,5 @@
-import { useRouter } from 'expo-router';
-import React from 'react';
+import { useRouter, useFocusEffect } from 'expo-router';
+import React, { useCallback } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -13,10 +13,19 @@ import colors from '../theme/colors';
 
 const ProfileScreen: React.FC = () => {
   const router = useRouter();
-  const { user, logout, loading, isAuthenticated } = useAuth();
+  const { user, logout, loading, isAuthenticated, refreshUser } = useAuth();
   
   // Get driver profile if exists (from user.driver populated by /auth/me)
   const driverProfile = (user as any)?.driver || null;
+
+  // Rafraîchir le profil quand on revient sur l'écran
+  useFocusEffect(
+    useCallback(() => {
+      if (isAuthenticated) {
+        refreshUser();
+      }
+    }, [isAuthenticated])
+  );
 
   const handleLogout = async () => {
     Alert.alert(
@@ -127,12 +136,18 @@ const ProfileScreen: React.FC = () => {
         <View style={styles.kycRejectedCard}>
           <Text style={styles.kycRejectedTitle}>❌ Demande refusée</Text>
           <Text style={styles.kycRejectedText}>
-            Votre demande a été refusée. Veuillez nous contacter pour plus d'informations.
+            {driverProfile.kyc_rejection_reason || 'Votre demande a été refusée. Veuillez soumettre de nouveaux documents conformes.'}
           </Text>
+          <TouchableOpacity
+            style={styles.resubmitButton}
+            onPress={() => router.push('/driver/complete-profile')}
+          >
+            <Text style={styles.resubmitButtonText}>📤 Soumettre de nouveaux documents</Text>
+          </TouchableOpacity>
         </View>
       )}
 
-      {/* Bouton "Devenir chauffeur" uniquement si pas de profil driver */}
+      {/* Bouton "Devenir chauffeur" uniquement si passager ET pas de profil driver */}
       {user.role === 'passenger' && !driverProfile && (
         <TouchableOpacity
           style={styles.becomeDriverButton}
@@ -293,6 +308,19 @@ const styles = StyleSheet.create({
     color: '#fff',
     opacity: 0.9,
     fontSize: 14,
+  },
+  resubmitButton: {
+    marginTop: 16,
+    backgroundColor: '#DC2626',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  resubmitButtonText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 15,
   },
   logoutButton: {
     margin: 24,

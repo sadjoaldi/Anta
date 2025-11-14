@@ -77,6 +77,26 @@ class DriverService {
       return null;
     }
   }
+
+  /**
+   * Create a driver profile with vehicle and license info
+   */
+  async createDriverProfile(data: {
+    user_id: number;
+    vehicle_type: string;
+    vehicle_brand: string;
+    vehicle_model: string;
+    vehicle_color: string;
+    vehicle_plate: string;
+    vehicle_capacity?: number;
+    license_number: string;
+    bank_name?: string;
+    account_number?: string;
+    account_holder?: string;
+  }): Promise<Driver> {
+    const driver = await apiClient.post<Driver>('/drivers', data);
+    return driver;
+  }
 }
 
 export default new DriverService();

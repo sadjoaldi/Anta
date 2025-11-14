@@ -223,7 +223,8 @@ export default function CompleteProfileScreen() {
             text: "OK",
             onPress: () => {
               if (kyc_complete) {
-                router.replace("/(tabs)/driver/dashboard");
+                // Rediriger vers le profil pour voir le statut "En attente"
+                router.replace("/(tabs)/profile");
               }
             },
           },

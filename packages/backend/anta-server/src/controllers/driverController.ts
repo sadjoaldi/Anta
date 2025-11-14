@@ -528,7 +528,12 @@ export const uploadKycDocuments = asyncHandler(async (req: Request, res: Respons
   const allDocsPresent = requiredDocs.every(doc => updatedDocuments[doc]);
   
   if (allDocsPresent && driver.kyc_status !== 'approved') {
-    await Driver.updateKycStatus(driverId, 'pending');
+    // Réinitialiser le statut KYC à "pending" et effacer la raison de rejet
+    await Driver.updateById(driverId, {
+      kyc_status: 'pending',
+      kyc_rejection_reason: null,
+      kyc_rejected_at: null
+    });
   }
 
   const updatedDriver = await Driver.findById(driverId);

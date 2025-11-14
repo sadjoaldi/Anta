@@ -48,6 +48,8 @@ export default function DriverDashboardScreen() {
   const [isOnline, setIsOnline] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [profileChecked, setProfileChecked] = useState(false);
+  const [kycStatus, setKycStatus] = useState<string | null>(null);
+  const [rejectionReason, setRejectionReason] = useState<string | null>(null);
 
   // Vérifier le profil au chargement
   useEffect(() => {
@@ -59,11 +61,19 @@ export default function DriverDashboardScreen() {
 
     try {
       const status = await driverProfileService.checkProfileStatus(user.id);
+      setKycStatus(status.kycStatus);
       
-      // Si les documents ne sont pas complets ou si le KYC est rejeté, rediriger
-      if (!status.hasAllDocuments || status.kycStatus === 'rejected') {
+      // Si les documents ne sont pas complets, rediriger
+      if (!status.hasAllDocuments) {
         router.replace('/driver/complete-profile');
         return;
+      }
+      
+      // Si rejeté, récupérer la raison mais NE PAS rediriger
+      if (status.kycStatus === 'rejected') {
+        const apiClient = require('../services/api.client').default;
+        const driver = await apiClient.get(`/drivers/user/${user.id}`);
+        setRejectionReason(driver.kyc_rejection_reason);
       }
       
       setProfileChecked(true);
@@ -278,8 +288,35 @@ export default function DriverDashboardScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* KYC Rejection Alert */}
+      {kycStatus === 'rejected' && rejectionReason && (
+        <View style={styles.rejectionAlert}>
+          <View style={styles.rejectionHeader}>
+            <Ionicons name="close-circle" size={28} color="#DC2626" />
+            <Text style={styles.rejectionTitle}>Documents refusés</Text>
+          </View>
+          <Text style={styles.rejectionReason}>
+            <Text style={styles.rejectionReasonLabel}>Raison : </Text>
+            {rejectionReason}
+          </Text>
+          <Text style={styles.rejectionHint}>
+            Vous devez soumettre de nouveaux documents conformes pour devenir chauffeur.
+          </Text>
+          <TouchableOpacity 
+            style={styles.resubmitButton}
+            onPress={() => router.push('/driver/complete-profile')}
+          >
+            <Ionicons name="cloud-upload-outline" size={20} color="#fff" />
+            <Text style={styles.resubmitButtonText}>Soumettre de nouveaux documents</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       {/* Online Status Toggle */}
-      <View style={styles.statusToggleCard}>
+      <View style={[
+        styles.statusToggleCard,
+        kycStatus === 'rejected' && styles.statusToggleCardDisabled
+      ]}>
         <View style={styles.statusInfo}>
           <View style={styles.statusRow}>
             <View style={[styles.statusDot, isOnline ? styles.statusOnline : styles.statusOffline]} />
@@ -287,6 +324,11 @@ export default function DriverDashboardScreen() {
               {isOnline ? 'En ligne' : 'Hors ligne'}
             </Text>
           </View>
+          {kycStatus === 'rejected' && (
+            <Text style={styles.disabledText}>
+              ⚠️ Désactivé - Documents refusés
+            </Text>
+          )}
           {currentLocation && isOnline && (
             <Text style={styles.locationText}>
               📍 Position mise à jour
@@ -298,6 +340,7 @@ export default function DriverDashboardScreen() {
           onValueChange={toggleOnlineStatus}
           trackColor={{ false: '#ccc', true: colors.primary }}
           thumbColor={isOnline ? '#fff' : '#f4f3f4'}
+          disabled={kycStatus === 'rejected'}
         />
       </View>
 
@@ -486,6 +529,61 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: colors.danger,
   },
+  rejectionAlert: {
+    backgroundColor: '#FEE2E2',
+    marginHorizontal: 20,
+    marginTop: 16,
+    padding: 16,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#DC2626',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  rejectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 8,
+  },
+  rejectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#DC2626',
+  },
+  rejectionReason: {
+    fontSize: 14,
+    color: '#991B1B',
+    lineHeight: 20,
+    marginBottom: 8,
+  },
+  rejectionReasonLabel: {
+    fontWeight: '600',
+  },
+  rejectionHint: {
+    fontSize: 13,
+    color: '#B91C1C',
+    fontStyle: 'italic',
+    marginBottom: 16,
+  },
+  resubmitButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#DC2626',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    gap: 8,
+  },
+  resubmitButtonText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600',
+  },
   statusToggleCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -501,6 +599,10 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
+  statusToggleCardDisabled: {
+    backgroundColor: '#F5F5F5',
+    opacity: 0.7,
+  },
   statusInfo: {
     flex: 1,
   },
@@ -508,6 +610,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 4,
+  },
+  disabledText: {
+    fontSize: 12,
+    color: '#DC2626',
+    marginTop: 4,
+    fontWeight: '500',
   },
   statusDot: {
     width: 12,
